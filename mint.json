@@ -1,91 +1,84 @@
 {
-  "$schema": "https://mintlify.com/schema.json",
-  "name": "Starter Kit",
+  "name": "Fikisha Vendor API",
   "logo": {
-    "dark": "/logo/dark.svg",
-    "light": "/logo/light.svg"
+    "light": "/logo/light.svg",
+    "dark": "/logo/dark.svg"
   },
   "favicon": "/favicon.svg",
   "colors": {
-    "primary": "#0D9373",
-    "light": "#07C983",
-    "dark": "#0D9373",
-    "anchors": {
-      "from": "#0D9373",
-      "to": "#07C983"
-    }
+    "primary": "#2563eb",
+    "light": "#3b82f6",
+    "dark": "#1d4ed8"
   },
   "topbarLinks": [
     {
-      "name": "Support",
-      "url": "mailto:hi@mintlify.com"
+      "name": "Dashboard",
+      "url": "https://vendor.fikisha.com"
     }
   ],
   "topbarCtaButton": {
-    "name": "Dashboard",
-    "url": "https://dashboard.mintlify.com"
+    "name": "Get Started",
+    "url": "https://vendor.fikisha.com/signup"
   },
-  "tabs": [
-    {
-      "name": "API Reference",
-      "url": "api-reference"
-    }
-  ],
   "anchors": [
     {
-      "name": "Documentation",
-      "icon": "book-open-cover",
-      "url": "https://mintlify.com/docs"
+      "name": "API Reference",
+      "icon": "code",
+      "url": "api-reference"
     },
     {
-      "name": "Community",
-      "icon": "slack",
-      "url": "https://mintlify.com/community"
-    },
-    {
-      "name": "Blog",
-      "icon": "newspaper",
-      "url": "https://mintlify.com/blog"
+      "name": "Support",
+      "icon": "headset",
+      "url": "https://vendor.fikisha.com/support"
     }
   ],
   "navigation": [
     {
-      "group": "Get Started",
+      "group": "Getting Started",
       "pages": [
         "introduction",
         "quickstart",
-        "development"
+        "authentication"
       ]
     },
     {
-      "group": "Essentials",
+      "group": "API Reference",
       "pages": [
-        "essentials/markdown",
-        "essentials/code",
-        "essentials/images",
-        "essentials/settings",
-        "essentials/navigation",
-        "essentials/reusable-snippets"
+        "api-reference/overview",
+        {
+          "group": "Airtime",
+          "pages": [
+            "api-reference/airtime/deliver-airtime",
+            "api-reference/airtime/bulk-deliver-airtime"
+          ]
+        },
+        {
+          "group": "Data Bundles",
+          "pages": [
+            "api-reference/data/list-bundles",
+            "api-reference/data/purchase-bundle"
+          ]
+        },
+        {
+          "group": "Wallet",
+          "pages": [
+            "api-reference/wallet/get-balance",
+            "api-reference/wallet/get-transactions"
+          ]
+        }
       ]
     },
     {
-      "group": "API Documentation",
+      "group": "Guides",
       "pages": [
-        "api-reference/introduction"
-      ]
-    },
-    {
-      "group": "Endpoint Examples",
-      "pages": [
-        "api-reference/endpoint/get",
-        "api-reference/endpoint/create",
-        "api-reference/endpoint/delete"
+        "guides/error-handling",
+        "guides/webhooks",
+        "guides/testing"
       ]
     }
   ],
   "footerSocials": {
-    "x": "https://x.com/mintlify",
-    "github": "https://github.com/mintlify",
-    "linkedin": "https://linkedin.com/company/mintlify"
+    "twitter": "https://twitter.com/fikisha",
+    "linkedin": "https://www.linkedin.com/company/fikisha"
   }
 }

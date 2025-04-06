@@ -1,0 +1,103 @@
+## api-reference/wallet/get-balance.mdx
+
+---
+title: 'Get Wallet Balance'
+api: 'GET /v1/wallet/balance'
+description: 'Get your current wallet balance'
+---
+
+# Get Wallet Balance
+
+Returns the current balance of your vendor wallet.
+
+## Request
+
+This endpoint doesn't require any parameters in the request body.
+
+## Response
+
+<ResponseField name="success" type="boolean">
+  Indicates if the request was successful
+</ResponseField>
+
+<ResponseField name="balance" type="number">
+  The current wallet balance
+</ResponseField>
+
+<ResponseField name="currency" type="string">
+  The currency code (e.g., KES)
+</ResponseField>
+
+```json
+{
+  "success": true,
+  "balance": 5000.50,
+  "currency": "KES"
+}
+```
+
+## Error Codes
+
+| Code | Description |
+| ---- | ----------- |
+| 401  | Unauthorized - Invalid API credentials |
+| 404  | Not Found - Wallet not found |
+| 500  | Internal Server Error - Something went wrong on our end |
+
+## Example
+
+<CodeGroup>
+```javascript Node.js
+const axios = require('axios');
+
+const getWalletBalance = async () => {
+  try {
+    const response = await axios.get(
+      'https://api.fikisha.com/v1/wallet/balance',
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Vendor-ID': 'YOUR_VENDOR_ID',
+          'X-API-Key': 'YOUR_API_KEY'
+        }
+      }
+    );
+    
+    console.log('Balance:', response.data.balance);
+    return response.data;
+  } catch (error) {
+    console.error('Error:', error.response?.data || error.message);
+    throw error;
+  }
+};
+```
+
+```python Python
+import requests
+
+def get_wallet_balance():
+    try:
+        url = 'https://api.fikisha.com/v1/wallet/balance'
+        headers = {
+            'Content-Type': 'application/json',
+            'X-Vendor-ID': 'YOUR_VENDOR_ID',
+            'X-API-Key': 'YOUR_API_KEY'
+        }
+        
+        response = requests.get(url, headers=headers)
+        response.raise_for_status()
+        
+        print('Balance:', response.json()['balance'])
+        return response.json()
+    except requests.exceptions.RequestException as e:
+        print('Error:', e)
+        raise e
+```
+
+```curl cURL
+curl -X GET https://api.fikisha.com/v1/wallet/balance \
+  -H "Content-Type: application/json" \
+  -H "X-Vendor-ID: YOUR_VENDOR_ID" \
+  -H "X-API-Key: YOUR_API_KEY"
+```
+</CodeGroup>

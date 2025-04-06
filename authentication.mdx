@@ -1,0 +1,45 @@
+## authentication.mdx
+
+---
+title: 'Authentication'
+description: 'Learn how to authenticate with the Fikisha Vendor API'
+---
+
+# Authentication
+
+All requests to the Fikisha Vendor API require authentication. We use API keys to authenticate requests.
+
+## API Keys
+
+Your API credentials consist of:
+
+- **Vendor ID**: Your unique vendor identifier
+- **API Key**: Your secret key for authentication
+
+Both these values must be included in the header of every API request.
+
+```bash
+X-Vendor-ID: your-vendor-id
+X-API-Key: your-api-key
+```
+
+## Generating API Keys
+
+You can generate your API keys from the [Fikisha Vendor Dashboard](https://vendor.fikisha.com/api-integration). If you need to regenerate your API key at any time, you can do so from the dashboard.
+
+<Warning>
+  Keep your API key secure! Do not share it in publicly accessible areas or client-side code.
+</Warning>
+
+## Authentication Errors
+
+If your authentication credentials are invalid or missing, you'll receive a `401 Unauthorized` response:
+
+```json
+{
+  "success": false,
+  "error": "Authentication failed: Invalid API Key"
+}
+```
+
+---
