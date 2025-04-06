@@ -1,0 +1,211 @@
+---
+title: 'List Data Bundles'
+# API Endpoint using GET with query parameter
+api: 'GET https://api.fikisha.app/v1/data/bundles' 
+description: 'Retrieve a list of currently active data bundles for a specific provider via API.'
+---
+
+import { ParamField, ResponseField, Expandable, CodeGroup } from 'mintlify/components';
+
+# List Data Bundles
+
+Fetches a list of currently active data bundles offered through Fikisha for a specified mobile network provider. This endpoint requires API Key authentication.
+
+## Authentication
+
+This endpoint requires **API Key Authentication**. Include your `X-Vendor-ID` and `X-API-Key` in the HTTP request headers.
+
+```http
+GET /v1/data/bundles?provider=safaricom HTTP/1.1
+Host: api.fikisha.app # Replace with actual host
+X-Vendor-ID: YOUR_VENDOR_ID_HERE
+X-API-Key: YOUR_SECRET_API_KEY_HERE
+Accept: application/json
+```
+
+See the [Authentication Guide](/authentication) for more details.
+
+## Query Parameters
+
+<ParamField query="provider" type="string" required>
+  The provider code (lowercase) for which to list bundles (e.g., `safaricom`, `airtel`, `telkom`).
+</ParamField>
+
+## Response (200 OK)
+
+Returns a JSON object containing a list of available data bundle objects for the specified provider.
+
+<ResponseField name="success" type="boolean" required>
+  Indicates if the request was successful (`true`).
+</ResponseField>
+
+<ResponseField name="bundles" type="array" required>
+  An array containing data bundle objects. The array will be empty if no active bundles are found for the provider.
+  
+  <Expandable>
+    <ResponseField name="id" type="string" required>
+      The unique identifier for the data bundle. Use this `bundleId` when initiating a purchase via `POST /v1/sales/initiate`.
+    </ResponseField>
+    
+    <ResponseField name="name" type="string" required>
+      The user-friendly display name of the bundle (e.g., "Daily 500MB + 500 SMS").
+    </ResponseField>
+    
+    <ResponseField name="data" type="string" required>
+      String describing the data allocation (e.g., "500MB", "1GB").
+    </ResponseField>
+    
+    <ResponseField name="price" type="number" required>
+      The price of the bundle in KES. Use this value for the `totalCost` field when initiating a purchase.
+    </ResponseField>
+    
+    <ResponseField name="validity" type="string" required>
+      String describing the bundle's validity period (e.g., "24 Hours", "7 Days").
+    </ResponseField>
+    
+    <ResponseField name="provider" type="string" required>
+      The provider code this bundle belongs to (will match the query parameter).
+    </ResponseField>
+    
+    <ResponseField name="description" type="string">
+      *(Optional)* Additional details about the bundle.
+    </ResponseField>
+    
+    <ResponseField name="isActive" type="boolean" required>
+      Should always be `true` in the response as inactive bundles are filtered out.
+    </ResponseField>
+    
+    <ResponseField name="ussdCode" type="string">
+      *(Optional)* Associated USSD code, if applicable.
+    </ResponseField>
+    
+    {/* Timestamps might be included - specify format if so */}
+    <ResponseField name="lastUpdated" type="string">
+      *(Optional)* ISO 8601 timestamp of the last update.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+```json
+{
+  "success": true,
+  "bundles": [
+    {
+      "id": "saf_daily_500mb",
+      "name": "Daily 500MB + 500 SMS",
+      "data": "500MB",
+      "price": 50,
+      "validity": "24 Hours",
+      "provider": "safaricom",
+      "description": "Enjoy 500MB data and 500 SMS valid for 24 hours.",
+      "isActive": true,
+      "ussdCode": "*544*1#",
+      "lastUpdated": "2024-08-10T12:00:00Z"
+    },
+    {
+      "id": "saf_weekly_2gb",
+      "name": "Weekly 2GB",
+      "data": "2GB",
+      "price": 250,
+      "validity": "7 Days",
+      "provider": "safaricom",
+      "description": null,
+      "isActive": true,
+      "ussdCode": "*544*2#",
+      "lastUpdated": "2024-08-10T12:00:00Z"
+    }
+    // ... other active safaricom bundles
+  ]
+}
+```
+
+```json
+{
+  "success": true,
+  "bundles": [] // Empty array if no bundles match
+}
+```
+
+## Possible Errors
+
+| HTTP Code | Error Code (code) | Description |
+| --------- | ----------------- | ----------- |
+| 400 | invalid-argument | The provider query parameter is missing or invalid. |
+| 401 | unauthenticated | Missing or invalid X-Vendor-ID or X-API-Key. |
+| 500 | internal | Server-side error occurred while fetching bundles. |
+
+See [Error Handling Guide](/error-handling) for details.
+
+## Example (Fetching Safaricom Bundles)
+
+<CodeGroup>
+  <div>
+    ```bash
+    # Replace YOUR_VENDOR_ID, YOUR_API_KEY, and YOUR_API_HOST
+    curl -X GET "https://YOUR_API_HOST/v1/data/bundles?provider=safaricom" \
+    -H "Accept: application/json" \
+    -H "X-Vendor-ID: YOUR_VENDOR_ID" \
+    -H "X-API-Key: YOUR_API_KEY"
+    ```
+  </div>
+  <div>
+    ```javascript
+    const axios = require('axios');
+
+    async function listDataBundles(provider) {
+      const url = 'https://YOUR_API_HOST/v1/data/bundles'; // Replace
+      const headers = {
+        'Accept': 'application/json',
+        'X-Vendor-ID': 'YOUR_VENDOR_ID', // Replace
+        'X-API-Key': 'YOUR_API_KEY'   // Replace
+      };
+      const params = { provider: provider.toLowerCase() }; // Ensure provider is lowercase
+
+      try {
+        const response = await axios.get(url, { headers, params });
+        console.log(`Bundles for ${provider}:`, response.data.bundles);
+        // Expected: { success: true, bundles: [...] }
+        return response.data.bundles || []; // Return empty array if undefined
+      } catch (error) {
+        console.error('API Error Status:', error.response?.status);
+        console.error('API Error Response:', error.response?.data);
+        throw error;
+      }
+    }
+
+    // Example Usage:
+    // listDataBundles('safaricom');
+    ```
+  </div>
+  <div>
+    ```python
+    import requests
+
+    def list_data_bundles(provider):
+        url = 'https://YOUR_API_HOST/v1/data/bundles' # Replace
+        headers = {
+            'Accept': 'application/json',
+            'X-Vendor-ID': 'YOUR_VENDOR_ID', # Replace
+            'X-API-Key': 'YOUR_API_KEY'   # Replace
+        }
+        params = {'provider': provider.lower()} # Ensure provider is lowercase
+
+        try:
+            response = requests.get(url, headers=headers, params=params)
+            response.raise_for_status() # Raise HTTPError for bad responses
+            data = response.json()
+            print(f"Bundles for {provider}:", data.get('bundles', []))
+            # Expected: { success: True, bundles: [...] }
+            return data.get('bundles', []) # Return empty list if undefined
+        except requests.exceptions.RequestException as e:
+            print(f'API Error: {e}')
+            if e.response is not None:
+                print(f'Status Code: {e.response.status_code}')
+                print(f'Response Text: {e.response.text}')
+            raise e
+
+    # Example Usage:
+    # list_data_bundles('safaricom')
+    ```
+  </div>
+</CodeGroup>

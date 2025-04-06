@@ -1,103 +1,145 @@
-## api-reference/wallet/get-balance.mdx
-
 ---
 title: 'Get Wallet Balance'
-api: 'GET /v1/wallet/balance'
-description: 'Get your current wallet balance'
+# Using GET method, which is conventional for retrieving resource state
+api: 'GET https://api.fikisha.app/v1/wallet/balance' 
+description: 'Retrieve your current vendor wallet balance via API endpoint.'
 ---
+
+import { ResponseField, Expandable, CodeGroup } from 'mintlify/components';
 
 # Get Wallet Balance
 
-Returns the current balance of your vendor wallet.
+Retrieves the current available balance and pending top-up amount associated with your vendor account using a dedicated API endpoint. This requires API Key authentication and is suitable for server-to-server integrations or backend processes needing balance information.
 
-## Request
+## Authentication
 
-This endpoint doesn't require any parameters in the request body.
+This endpoint requires **API Key Authentication**. Include your `X-Vendor-ID` and `X-API-Key` in the HTTP request headers.
 
-## Response
+```http
+GET /v1/wallet/balance HTTP/1.1
+Host: api.fikisha.app # Replace with actual API host
+X-Vendor-ID: YOUR_VENDOR_ID_HERE
+X-API-Key: YOUR_SECRET_API_KEY_HERE
+Accept: application/json
+```
 
-<ResponseField name="success" type="boolean">
-  Indicates if the request was successful
+See the [Authentication Guide](/authentication) for more details on obtaining and using API credentials.
+
+## Request Parameters
+
+This endpoint does not require any query parameters or request body.
+
+## Response (200 OK)
+
+Returns a JSON object representing the current state of the vendor's wallet.
+
+<ResponseField name="success" type="boolean" required>
+  Indicates if the request was successful (`true`).
 </ResponseField>
 
-<ResponseField name="balance" type="number">
-  The current wallet balance
+<ResponseField name="balance" type="number" required>
+  The current **available** monetary balance in the wallet (e.g., `5000.50`). This amount can be used for transactions.
 </ResponseField>
 
-<ResponseField name="currency" type="string">
-  The currency code (e.g., KES)
+<ResponseField name="pendingTopup" type="number" required>
+  The total amount from top-up requests currently being processed but not yet reflected in the main `balance` (e.g., `1000`).
+</ResponseField>
+
+<ResponseField name="currency" type="string" required>
+  The currency code for the balance amounts (e.g., `KES`).
+</ResponseField>
+
+<ResponseField name="lastUpdated" type="string" required>
+  ISO 8601 timestamp indicating the last time the wallet balance or pending top-up amount was updated.
 </ResponseField>
 
 ```json
 {
   "success": true,
-  "balance": 5000.50,
-  "currency": "KES"
+  "balance": 4950.50,
+  "pendingTopup": 0,
+  "currency": "KES",
+  "lastUpdated": "2024-08-15T10:30:05Z"
 }
 ```
 
-## Error Codes
+## Possible Errors
 
-| Code | Description |
-| ---- | ----------- |
-| 401  | Unauthorized - Invalid API credentials |
-| 404  | Not Found - Wallet not found |
-| 500  | Internal Server Error - Something went wrong on our end |
+| HTTP Code | Error Code (code) | Description |
+| --------- | ----------------- | ----------- |
+| 401 | unauthenticated | Missing or invalid API Key/Vendor ID. |
+| 404 | wallet-not-found | No wallet associated with the Vendor ID. |
+| 500 | internal | Server-side error fetching the balance. |
+
+See [Error Handling Guide](/error-handling) for details.
 
 ## Example
 
 <CodeGroup>
-```javascript Node.js
-const axios = require('axios');
+  <div>
+    ```bash
+    # Replace YOUR_VENDOR_ID, YOUR_API_KEY, and YOUR_API_HOST
+    curl -X GET https://YOUR_API_HOST/v1/wallet/balance \
+    -H "Accept: application/json" \
+    -H "X-Vendor-ID: YOUR_VENDOR_ID" \
+    -H "X-API-Key: YOUR_API_KEY"
+    ```
+  </div>
+  <div>
+    ```javascript
+    const axios = require('axios');
 
-const getWalletBalance = async () => {
-  try {
-    const response = await axios.get(
-      'https://api.fikisha.com/v1/wallet/balance',
-      {
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Vendor-ID': 'YOUR_VENDOR_ID',
-          'X-API-Key': 'YOUR_API_KEY'
-        }
+    async function getWalletBalance() {
+      const url = 'https://YOUR_API_HOST/v1/wallet/balance'; // Replace
+      const headers = {
+        'Accept': 'application/json',
+        'X-Vendor-ID': 'YOUR_VENDOR_ID', // Replace
+        'X-API-Key': 'YOUR_API_KEY'   // Replace
+      };
+
+      try {
+        const response = await axios.get(url, { headers });
+        console.log('Wallet Balance Response:', response.data);
+        // Expected: { success: true, balance: ..., pendingTopup: ..., currency: ..., lastUpdated: ... }
+        return response.data;
+      } catch (error) {
+        console.error('API Error Status:', error.response?.status);
+        console.error('API Error Response:', error.response?.data);
+        throw error;
       }
-    );
-    
-    console.log('Balance:', response.data.balance);
-    return response.data;
-  } catch (error) {
-    console.error('Error:', error.response?.data || error.message);
-    throw error;
-  }
-};
-```
+    }
 
-```python Python
-import requests
+    getWalletBalance();
+    ```
+  </div>
+  <div>
+    ```python
+    import requests
+    import json
 
-def get_wallet_balance():
-    try:
-        url = 'https://api.fikisha.com/v1/wallet/balance'
+    def get_wallet_balance():
+        url = 'https://YOUR_API_HOST/v1/wallet/balance' # Replace
         headers = {
-            'Content-Type': 'application/json',
-            'X-Vendor-ID': 'YOUR_VENDOR_ID',
-            'X-API-Key': 'YOUR_API_KEY'
+            'Accept': 'application/json',
+            'X-Vendor-ID': 'YOUR_VENDOR_ID', # Replace
+            'X-API-Key': 'YOUR_API_KEY'   # Replace
         }
-        
-        response = requests.get(url, headers=headers)
-        response.raise_for_status()
-        
-        print('Balance:', response.json()['balance'])
-        return response.json()
-    except requests.exceptions.RequestException as e:
-        print('Error:', e)
-        raise e
-```
 
-```curl cURL
-curl -X GET https://api.fikisha.com/v1/wallet/balance \
-  -H "Content-Type: application/json" \
-  -H "X-Vendor-ID: YOUR_VENDOR_ID" \
-  -H "X-API-Key: YOUR_API_KEY"
-```
+        try:
+            response = requests.get(url, headers=headers)
+            response.raise_for_status() # Raise HTTPError for bad responses (4xx or 5xx)
+            data = response.json()
+            print('Wallet Balance Response:', data)
+            # Expected: { success: True, balance: ..., pendingTopup: ..., currency: ..., lastUpdated: ... }
+            return data
+        except requests.exceptions.RequestException as e:
+            print(f'API Error: {e}')
+            if e.response is not None:
+                print(f'Status Code: {e.response.status_code}')
+                print(f'Response Text: {e.response.text}')
+            raise e
+
+    get_wallet_balance()
+    ```
+  </div>
 </CodeGroup>

@@ -6,9 +6,9 @@
   },
   "favicon": "/favicon.svg",
   "colors": {
-    "primary": "#2563eb",
-    "light": "#3b82f6",
-    "dark": "#1d4ed8"
+    "primary": "#F7924F",
+    "light": "#F9A87D",
+    "dark": "#E57A3A"
   },
   "topbarLinks": [
     {
@@ -18,18 +18,18 @@
   ],
   "topbarCtaButton": {
     "name": "Get Started",
-    "url": "https://vendor.fikisha.com/signup"
+    "url": "https://vendor.fikisha.com/signin"
   },
   "anchors": [
     {
       "name": "API Reference",
       "icon": "code",
-      "url": "api-reference"
+      "url": "api-reference/overview"
     },
     {
       "name": "Support",
       "icon": "headset",
-      "url": "https://vendor.fikisha.com/support"
+      "url": "mailto:support@fikisha.app"
     }
   ],
   "navigation": [
@@ -48,22 +48,28 @@
         {
           "group": "Airtime",
           "pages": [
-            "api-reference/airtime/deliver-airtime",
-            "api-reference/airtime/bulk-deliver-airtime"
+            "api-reference/airtime/request-airtime-delivery",
+            "api-reference/airtime/bulk-request-airtime"
           ]
         },
         {
           "group": "Data Bundles",
           "pages": [
-            "api-reference/data/list-bundles",
-            "api-reference/data/purchase-bundle"
+            "api-reference/data/list-data-bundles",
+            "api-reference/data/purchase-data-bundle"
           ]
         },
         {
           "group": "Wallet",
           "pages": [
-            "api-reference/wallet/get-balance",
-            "api-reference/wallet/get-transactions"
+            "api-reference/wallet/get-wallet-balance",
+            "api-reference/wallet/get-wallet-transactions"
+          ]
+        },
+        {
+          "group": "Sale Requests",
+          "pages": [
+            "api-reference/sales/initiate-sale"
           ]
         }
       ]
@@ -73,7 +79,7 @@
       "pages": [
         "guides/error-handling",
         "guides/webhooks",
-        "guides/testing"
+        "guides/testing-integration"
       ]
     }
   ],

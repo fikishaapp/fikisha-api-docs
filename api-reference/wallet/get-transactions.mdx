@@ -1,0 +1,261 @@
+---
+title: 'Get Wallet Transactions'
+# API Endpoint using GET method
+api: 'GET https://api.fikisha.app/v1/wallet/transactions' 
+description: 'Retrieve a paginated list of your vendor wallet transactions via API.'
+---
+
+import { ResponseField, Expandable, ParamField, CodeGroup } from 'mintlify/components';
+
+# Get Wallet Transactions
+
+Fetches a list of transactions associated with your vendor wallet (e.g., top-ups, commissions, refunds, withdrawals, sale deductions), ordered by most recent first. This endpoint supports filtering and pagination for efficient data retrieval.
+
+## Authentication
+
+This endpoint requires **API Key Authentication**. Include your `X-Vendor-ID` and `X-API-Key` in the HTTP request headers.
+
+```http
+GET /v1/wallet/transactions?limit=10 HTTP/1.1
+Host: api.fikisha.app # Replace with actual host
+X-Vendor-ID: YOUR_VENDOR_ID_HERE
+X-API-Key: YOUR_SECRET_API_KEY_HERE
+Accept: application/json
+```
+
+See the [Authentication Guide](/authentication) for more details.
+
+## Query Parameters
+
+Use these parameters in the URL query string to filter and paginate results.
+
+<ParamField query="limit" type="integer">
+  *(Optional)* Specifies the maximum number of transactions to return in a single response.
+  - Default: `20`
+  - Maximum: `100`
+</ParamField>
+
+<ParamField query="startAfter" type="string">
+  *(Optional)* The unique `id` of the last transaction received in the previous page response. Use the `lastVisibleId` value from a previous response to fetch the next page of results. If omitted, starts from the most recent transaction.
+</ParamField>
+
+<ParamField query="type" type="string">
+  *(Optional)* Filter transactions by a specific type. Allowed values:
+  - `topup`
+  - `commission`
+  - `refund`
+  - `withdrawal`
+  - `sale_deduction`
+  
+  *(Consult backend implementation for the exact list of filterable types)*
+</ParamField>
+
+<ParamField query="status" type="string">
+  *(Optional)* Filter transactions by a specific status. Allowed values:
+  - `pending`
+  - `completed`
+  - `failed`
+</ParamField>
+
+<ParamField query="startDate" type="string">
+  *(Optional)* Fetch transactions that occurred on or after this date/time. Format: ISO 8601 (e.g., `2024-08-01T00:00:00Z`). Filters based on the transaction's primary event timestamp.
+</ParamField>
+
+<ParamField query="endDate" type="string">
+  *(Optional)* Fetch transactions that occurred on or before this date/time. Format: ISO 8601 (e.g., `2024-08-15T23:59:59Z`). Filters based on the transaction's primary event timestamp.
+</ParamField>
+
+## Response (200 OK)
+
+Returns a JSON object containing a list of wallet transactions and pagination metadata.
+
+<ResponseField name="success" type="boolean" required>
+  Indicates if the request was successful (`true`).
+</ResponseField>
+
+<ResponseField name="transactions" type="array" required>
+  An array of wallet transaction objects, ordered by timestamp descending by default. The array might be empty if no transactions match the criteria.
+
+  <Expandable>
+    <ResponseField name="id" type="string" required>
+      Unique identifier for the wallet transaction record. Use this for `startAfter` pagination.
+    </ResponseField>
+
+    <ResponseField name="reference" type="string" required>
+      Internal or external reference ID associated with the transaction (e.g., M-PESA code, sale ID).
+    </ResponseField>
+
+    <ResponseField name="amount" type="number" required>
+      The monetary value of the transaction.
+    </ResponseField>
+
+    <ResponseField name="type" type="string" required>
+      Categorizes the transaction (e.g., `topup`, `commission`, `withdrawal`).
+    </ResponseField>
+
+    <ResponseField name="status" type="string" required>
+      The current status (`pending`, `completed`, `failed`).
+    </ResponseField>
+
+    <ResponseField name="description" type="string">
+      *(Optional)* A brief description of the transaction.
+    </ResponseField>
+
+    <ResponseField name="relatedTransactionId" type="string">
+      *(Optional)* Links this wallet event to a primary sale transaction ID (from the `transactions` collection).
+    </ResponseField>
+
+    <ResponseField name="relatedRequestId" type="string">
+      *(Optional)* Links this wallet event to an initial sale request ID (from the `sale_requests` collection).
+    </ResponseField>
+
+    <ResponseField name="failureReason" type="string">
+      *(Optional, if `status` is `failed`)* Explanation of why the transaction failed.
+    </ResponseField>
+
+    <ResponseField name="timestamp" type="string" required>
+      ISO 8601 formatted timestamp indicating when the core event of the transaction occurred or was completed.
+    </ResponseField>
+    {/* Add other fields like paymentMethod, withdrawalMethod etc. if returned by your API */}
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="hasMore" type="boolean" required>
+  `true` if more transactions are available beyond the current page; `false` otherwise.
+</ResponseField>
+
+<ResponseField name="lastVisibleId" type="string | null" required>
+  The `id` of the last transaction object in the `transactions` array. Use this value for the `startAfter` query parameter in your next request to fetch the subsequent page. `null` if this is the last page or if `transactions` is empty.
+</ResponseField>
+
+```json
+{
+  "success": true,
+  "transactions": [
+    {
+      "id": "wtx_commission_abc...", // Use this ID for pagination
+      "reference": "commission_txn_abc...",
+      "amount": 5.00,
+      "type": "commission",
+      "status": "completed",
+      "description": "Commission for airtime sale",
+      "relatedTransactionId": "api_txn_xyz...",
+      "timestamp": "2024-08-15T10:30:00Z"
+    },
+    {
+      "id": "wtx_topup_def...", // Assume this is the last item on this page
+      "reference": "topup_def...",
+      "amount": 1000.00,
+      "type": "topup",
+      "status": "completed",
+      "description": "M-PESA Top-up",
+      // "paymentMethod": "mobile_money", // Include if API returns it
+      "timestamp": "2024-08-15T09:15:00Z"
+    }
+    // ... potentially more transactions up to the 'limit'
+  ],
+  "hasMore": true,
+  "lastVisibleId": "wtx_topup_def..." // Pass this in 'startAfter' for page 2
+}
+```
+
+```json
+{
+  "success": true,
+  "transactions": [],
+  "hasMore": false,
+  "lastVisibleId": null
+}
+```
+
+## Possible Errors
+
+| HTTP Code | Error Code (code) | Description |
+| --------- | ----------------- | ----------- |
+| 400 | invalid-argument | Invalid query parameters (e.g., bad date format, invalid limit, invalid type or status filter). |
+| 401 | unauthenticated | Missing or invalid API Key/Vendor ID. |
+| 500 | internal | Server-side error occurred while fetching transactions. |
+
+See [Error Handling Guide](/error-handling) for details.
+
+## Example (Fetching second page, limit 10, type 'commission')
+
+<CodeGroup>
+  <div>
+    ```bash
+    # Replace YOUR_VENDOR_ID, YOUR_API_KEY, YOUR_API_HOST, LAST_VISIBLE_ID_FROM_PAGE_1
+    curl -X GET "https://YOUR_API_HOST/v1/wallet/transactions?limit=10&type=commission&startAfter=LAST_VISIBLE_ID_FROM_PAGE_1" \
+    -H "Accept: application/json" \
+    -H "X-Vendor-ID: YOUR_VENDOR_ID" \
+    -H "X-API-Key: YOUR_API_KEY"
+    ```
+  </div>
+  <div>
+    ```javascript
+    const axios = require('axios');
+
+    async function getNextCommissionTransactions(lastVisibleId) {
+      const url = 'https://YOUR_API_HOST/v1/wallet/transactions'; // Replace
+      const headers = {
+        'Accept': 'application/json',
+        'X-Vendor-ID': 'YOUR_VENDOR_ID', // Replace
+        'X-API-Key': 'YOUR_API_KEY'   // Replace
+      };
+      const params = {
+        limit: 10,
+        type: 'commission',
+        startAfter: lastVisibleId
+      };
+
+      try {
+        const response = await axios.get(url, { headers, params });
+        console.log('Page 2 Commissions:', response.data.transactions);
+        console.log('Has More:', response.data.hasMore);
+        console.log('Next Last Visible ID:', response.data.lastVisibleId);
+        return response.data;
+      } catch (error) {
+        console.error('API Error:', error.response ? error.response.data : error.message);
+        throw error;
+      }
+    }
+
+    // Usage (assuming lastId was obtained from the previous request)
+    // getNextCommissionTransactions('wtx_topup_def...');
+    ```
+  </div>
+  <div>
+    ```python
+    import requests
+
+    def get_next_commission_transactions(last_visible_id):
+        url = 'https://YOUR_API_HOST/v1/wallet/transactions' # Replace
+        headers = {
+            'Accept': 'application/json',
+            'X-Vendor-ID': 'YOUR_VENDOR_ID', # Replace
+            'X-API-Key': 'YOUR_API_KEY'   # Replace
+        }
+        params = {
+            'limit': 10,
+            'type': 'commission',
+            'startAfter': last_visible_id
+        }
+
+        try:
+            response = requests.get(url, headers=headers, params=params)
+            response.raise_for_status()
+            data = response.json()
+            print('Page 2 Commissions:', data.get('transactions', []))
+            print('Has More:', data.get('hasMore'))
+            print('Next Last Visible ID:', data.get('lastVisibleId'))
+            return data
+        except requests.exceptions.RequestException as e:
+            print(f'API Error: {e}')
+            if e.response is not None:
+                print(e.response.text)
+            raise e
+
+    # Usage (assuming lastId was obtained from the previous request)
+    # get_next_commission_transactions('wtx_topup_def...')
+    ```
+  </div>
+</CodeGroup>

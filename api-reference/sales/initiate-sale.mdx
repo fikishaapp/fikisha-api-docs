@@ -1,0 +1,200 @@
+---
+title: 'Initiate Sale Request'
+# API Endpoint using POST
+api: 'POST https://api.fikisha.app/v1/sales/initiate' 
+description: 'Initiates various asynchronous sale types (Airtime, Data, Physical Goods) via API.'
+---
+
+import { ParamField, ResponseField, Expandable, Info, Important } from 'mintlify/components';
+
+# Initiate Sale Request
+
+This is the primary **HTTP API endpoint** used to initiate a sale request for various product types (Airtime, Data Bundles, Physical Goods). It performs initial validation against your vendor account (including wallet balance and stock checks), deducts the cost optimistically, logs the request, and queues the task for asynchronous processing by the appropriate backend service based on the `saleType`.
+
+This endpoint is designed for server-to-server integrations or automated systems.
+
+## Authentication
+
+This endpoint requires **API Key Authentication**. Include your `X-Vendor-ID` and `X-API-Key` in the HTTP request headers.
+
+```http
+POST /v1/sales/initiate HTTP/1.1
+Host: api.fikisha.app # Replace with actual host
+Content-Type: application/json
+Accept: application/json
+X-Vendor-ID: YOUR_VENDOR_ID_HERE
+X-API-Key: YOUR_SECRET_API_KEY_HERE
+
+{ ... request body ... }
+```
+
+See the [Authentication Guide](/authentication) for details.
+
+## Request Body
+
+The JSON request body requires common fields and type-specific fields depending on the `saleType`.
+
+### Common Fields (Required for all sale types):
+
+<ParamField body="saleType" type="string" required>
+  Specifies the type of sale being requested. Supported values:
+  - `"direct_airtime"`
+  - `"pin_airtime"`
+  - `"data_bundle"`
+  - `"physical_good"`
+</ParamField>
+
+<ParamField body="totalCost" type="number" required>
+  The **exact cost** (in KES) that will be deducted from your vendor wallet for this sale item.
+  - For `direct_airtime`/`pin_airtime`, must match `amount`.
+  - For `data_bundle`, must match the `price` of the `bundleId`.
+  - For `physical_good`, must match `product.price * quantity`.
+  <br/>*(Validated against wallet balance)*.
+</ParamField>
+
+<ParamField body="clientRef" type="string">
+  *(Optional)* Your unique reference string for this request (e.g., order ID, max 50 characters). Highly recommended for reconciliation.
+</ParamField>
+
+### Fields for saleType: "direct_airtime" or saleType: "pin_airtime":
+
+<ParamField body="phoneNumber" type="string" required>
+  Recipient's phone number, including country code (e.g., `+254712345678`).
+</ParamField>
+
+<ParamField body="amount" type="number" required>
+  Airtime amount (must match `totalCost`). Minimum value applies (e.g., 10 KES).
+</ParamField>
+
+<ParamField body="provider" type="string" required>
+  Lowercase provider code (e.g., `safaricom`, `airtel`, `telkom`).
+</ParamField>
+
+<ParamField body="contactName" type="string">
+  *(Optional)* Name of the contact (for logging/history).
+</ParamField>
+
+### Fields for saleType: "data_bundle":
+
+<ParamField body="phoneNumber" type="string" required>
+  Recipient's phone number, including country code.
+</ParamField>
+
+<ParamField body="bundleId" type="string" required>
+  Unique ID of the data bundle (from [List Data Bundles](/api-reference/data/list-bundles)).
+</ParamField>
+
+<ParamField body="provider" type="string" required>
+  Provider code (must match the bundle).
+</ParamField>
+
+<ParamField body="bundleName" type="string">
+  *(Optional)* Name of the bundle (for logging).
+</ParamField>
+{/* Include bundleData, bundleValidity if needed/useful */}
+{/* `totalCost` must match the bundle's price */}
+
+### Fields for saleType: "physical_good":
+
+<ParamField body="productId" type="string" required>
+  Unique ID of the physical product.
+</ParamField>
+
+<ParamField body="quantity" type="integer" required>
+  Number of units (must be >= 1).
+</ParamField>
+
+<ParamField body="productName" type="string">
+  *(Optional)* Name of the product (for logging).
+</ParamField>
+
+<ParamField body="unitPrice" type="number">
+  *(Optional)* Price per unit (for logging).
+</ParamField>
+
+<ParamField body="customerPhone" type="string">
+  *(Optional)* Phone number for delivery/customer contact.
+</ParamField>
+{/* `totalCost` must match product.price * quantity */}
+
+## Response (202 Accepted)
+
+If the request is valid (authentication, parameters, balance/stock check) and successfully queued, the API responds with HTTP 202 Accepted.
+
+<ResponseField name="success" type="boolean" required>
+  Always `true` if the request was accepted for processing.
+</ResponseField>
+
+<ResponseField name="requestId" type="string" required>
+  The unique Fikisha ID generated for this specific sale request. Use this ID to track the asynchronous process via webhooks or status polling.
+</ResponseField>
+
+<ResponseField name="message" type="string">
+  *(Optional)* A confirmation message, e.g., "Sale request accepted and queued.".
+</ResponseField>
+
+<ResponseField name="clientRef" type="string">
+  *(Optional)* Your reference ID, echoed back if provided in the request.
+</ResponseField>
+
+```json
+{
+  "success": true,
+  "requestId": "sale_req_c4e8a2b1...",
+  "message": "Sale request accepted and queued.",
+  "clientRef": "my-order-ref-123"
+}
+```
+
+<Important>
+  A `202 Accepted` response **only confirms the request is queued**. It does **not** guarantee final delivery or fulfillment. Monitor the status asynchronously using the `requestId`.
+</Important>
+
+## Monitoring Status
+
+- **Webhooks (Recommended)**: Configure Webhooks to receive `sale.request.completed` or `sale.request.failed` events pushed to your server, referencing the `requestId`.
+
+- **Polling (Alternative)**: Use a (currently conceptual/TBD) `GET /v1/sales/status/{requestId}` endpoint periodically to check the status.
+
+## Possible Errors (Synchronous)
+
+Errors during the initial POST request will result in 4xx or 5xx HTTP status codes.
+
+| HTTP Code | Error Code (code) | Description |
+| --------- | ----------------- | ----------- |
+| 400 | invalid-argument | Missing/invalid parameters, mismatched totalCost. |
+| 401 | unauthenticated | Missing or invalid X-Vendor-ID or X-API-Key. |
+| 402 | insufficient-funds | Wallet balance below totalCost. |
+| 404 | product-not-found | The bundleId or productId does not exist or is inactive. |
+| 412 | failed-precondition | Insufficient stock for physical_good. |
+| 429 | rate-limit-exceeded | Too many requests. |
+| 500 | internal | Server-side error during validation or queueing. |
+
+Refer to the [Error Handling Guide](/error-handling) for more details.
+
+## Example (Requesting Data Bundle via cURL)
+
+```bash
+# Replace YOUR_API_HOST, YOUR_VENDOR_ID, YOUR_API_KEY
+curl -X POST https://YOUR_API_HOST/v1/sales/initiate \
+  -H "Content-Type: application/json" \
+  -H "X-Vendor-ID: YOUR_VENDOR_ID" \
+  -H "X-API-Key: YOUR_API_KEY" \
+  -d '{
+    "saleType": "data_bundle",
+    "phoneNumber": "+254712345678",
+    "bundleId": "saf_weekly_2gb",
+    "provider": "safaricom",
+    "totalCost": 250,
+    "bundleName": "Weekly 2GB",
+    "clientRef": "server-data-order-001"
+  }'
+
+# Expected Response (on success): HTTP 202 Accepted
+# {
+#   "success": true,
+#   "requestId": "sale_req_...",
+#   "message": "Sale request accepted and queued.",
+#   "clientRef": "server-data-order-001"
+# }
+```

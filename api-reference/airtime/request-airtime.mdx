@@ -1,0 +1,164 @@
+---
+title: 'Request Airtime Delivery'
+# API Endpoint using POST via the unified sales initiator
+api: 'POST https://api.fikisha.app/v1/sales/initiate' 
+description: 'Initiate direct airtime top-up or PIN generation via API.'
+---
+
+import { ParamField, ResponseField, Expandable, CodeGroup, Info, Important } from 'mintlify/components';
+
+# Request Airtime Delivery
+
+Submits a request to deliver airtime to a customer's phone number (either directly or by generating a PIN) using the `/v1/sales/initiate` endpoint. This operation requires API Key authentication and is processed asynchronously.
+
+## Authentication
+
+This endpoint requires **API Key Authentication**. Include your `X-Vendor-ID` and `X-API-Key` in the HTTP request headers.
+
+```http
+POST /v1/sales/initiate HTTP/1.1
+Host: api.fikisha.app # Replace with actual host
+Content-Type: application/json
+Accept: application/json
+X-Vendor-ID: YOUR_VENDOR_ID_HERE
+X-API-Key: YOUR_SECRET_API_KEY_HERE
+
+{ ... request body ... }
+```
+
+See the [Authentication Guide](/authentication) for details.
+
+## Request Body
+
+The JSON request body must specify `saleType` as either "direct_airtime" or "pin_airtime".
+
+<ParamField body="saleType" type="string" required fixed="direct_airtime | pin_airtime">
+  - `"direct_airtime"`: Loads airtime directly onto the recipient's phone number.
+  - `"pin_airtime"`: Generates an airtime PIN for the specified amount and provider. The PIN will be available once the request status is `completed` (via webhook or status check).
+</ParamField>
+
+<ParamField body="phoneNumber" type="string" required>
+  The target phone number, including the country code (e.g., `+254712345678`). For `pin_airtime`, this is primarily for logging purposes.
+</ParamField>
+
+<ParamField body="amount" type="number" required>
+  The amount of airtime in KES. Must meet minimum provider requirements (e.g., > 5 KES).
+</ParamField>
+
+<ParamField body="totalCost" type="number" required>
+  The cost deducted from your wallet. **Must match the `amount`** for standard airtime requests. Validated against your wallet balance.
+</ParamField>
+
+<ParamField body="provider" type="string" required>
+  Lowercase provider code (e.g., `safaricom`, `airtel`, `telkom`).
+</ParamField>
+
+<ParamField body="clientRef" type="string">
+  *(Optional)* Your unique reference string for this request (max 50 characters). Recommended for tracking.
+</ParamField>
+
+<ParamField body="contactName" type="string">
+  *(Optional)* Name associated with the phone number (for logging).
+</ParamField>
+
+```json
+{
+  "saleType": "direct_airtime",
+  "phoneNumber": "+254712345678",
+  "amount": 100,
+  "totalCost": 100,
+  "provider": "safaricom",
+  "clientRef": "direct-airtime-req-001"
+}
+```
+
+```json
+{
+  "saleType": "pin_airtime",
+  "phoneNumber": "+254722222222", // Still useful for reference
+  "amount": 50,
+  "totalCost": 50,
+  "provider": "airtel",
+  "clientRef": "pin-airtime-req-002"
+}
+```
+
+## Response (202 Accepted)
+
+If the request is valid (authentication, parameters, balance check) and successfully queued, the API responds with HTTP 202 Accepted.
+
+<ResponseField name="success" type="boolean" required>
+  Always `true` if the request was accepted for processing.
+</ResponseField>
+
+<ResponseField name="requestId" type="string" required>
+  The unique Fikisha ID for this sale request (`sale_req_...`). Use this ID to track the asynchronous process.
+</ResponseField>
+
+<ResponseField name="message" type="string">
+  *(Optional)* Confirmation message (e.g., "Sale request accepted and queued.").
+</ResponseField>
+
+<ResponseField name="clientRef" type="string">
+  *(Optional)* Your reference ID, echoed back if provided.
+</ResponseField>
+
+```json
+{
+  "success": true,
+  "requestId": "sale_req_def456ghi789",
+  "message": "Sale request accepted and queued.",
+  "clientRef": "direct-airtime-req-001"
+}
+```
+
+<Important>
+  A `202 Accepted` response **only confirms the request is queued**. It does **not** guarantee successful airtime delivery or PIN generation. Monitor the status asynchronously using the `requestId`.
+</Important>
+
+## Monitoring Status & Retrieving PIN
+
+- **Webhooks (Recommended)**: Configure Webhooks to receive `sale.request.completed` or `sale.request.failed` events.
+  - For `saleType: "pin_airtime"`, the completed event payload will contain the generated pin in the `data` object.
+  - For failed events, the `failureReason` will be included.
+
+- **Polling (Alternative)**: Use a status check endpoint (details TBD) with the `requestId`. If the status is `completed` for a `pin_airtime` request, the response should include the PIN.
+
+## Possible Errors (Synchronous)
+
+Errors during the initial POST request to `/v1/sales/initiate`:
+
+| HTTP Code | Error Code (code) | Description |
+| --------- | ----------------- | ----------- |
+| 400 | invalid-argument | Missing/invalid fields (saleType, phoneNumber, etc.), amount mismatch totalCost. |
+| 401 | unauthenticated | Missing or invalid X-Vendor-ID or X-API-Key. |
+| 402 | insufficient-funds | Wallet balance below totalCost. |
+| 500 | internal | Server-side error during validation or queueing. |
+
+Refer to the [Error Handling Guide](/error-handling) for details.
+
+## Example (Requesting Direct Airtime via cURL)
+
+```bash
+# Replace YOUR_API_HOST, YOUR_VENDOR_ID, YOUR_API_KEY
+curl -X POST https://YOUR_API_HOST/v1/sales/initiate \
+  -H "Content-Type: application/json" \
+  -H "X-Vendor-ID: YOUR_VENDOR_ID" \
+  -H "X-API-Key: YOUR_API_KEY" \
+  -d '{
+    "saleType": "direct_airtime",
+    "phoneNumber": "+254711111111",
+    "amount": 20,
+    "totalCost": 20,
+    "provider": "safaricom",
+    "clientRef": "server-direct-req-3344"
+  }'
+
+# Expected Response (on success): HTTP 202 Accepted
+# {
+#   "success": true,
+#   "requestId": "sale_req_...",
+#   "message": "Sale request accepted and queued.",
+#   "clientRef": "server-direct-req-3344"
+# }
+```

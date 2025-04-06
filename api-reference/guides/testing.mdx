@@ -1,0 +1,98 @@
+---
+title: 'Testing Your Integration'
+description: 'Guidelines and best practices for testing your Fikisha Vendor HTTP API integration.'
+---
+
+import { Tab, Tabs, Warning, Note } from 'mintlify/components';
+
+# Testing Your Integration
+
+Thorough testing is critical before deploying any application that interacts with the Fikisha Vendor API, especially when dealing with real funds and transactions.
+
+## 1. Testing Environment
+
+<Warning>
+  **No Sandbox Available:** Fikisha currently does **not** provide a dedicated sandbox or test environment. All API calls made with valid production credentials interact directly with the **live** Fikisha system and affect your **live** vendor wallet. **Exercise extreme caution during testing.**
+</Warning>
+
+We recommend simulating API responses in your own development environment where possible (see Mocking section below). When live testing is necessary, strictly adhere to the best practices outlined here.
+
+*(Documentation will be updated if/when a sandbox environment becomes available).*
+
+## 2. Testing Live API Endpoints (Use Sparingly & Carefully)
+
+When direct testing against live endpoints is required:
+
+*   **API Credentials:** Use your **live** Vendor ID and API Key. Consider if generating a separate key *solely* for staging/testing environments within your system enhances security (if the portal allows multiple keys). Treat all keys as production secrets.
+*   **Minimal Values:** Initiate transactions (airtime, data) using the **smallest possible amounts** allowed by the API (e.g., 10 KES) to minimize financial impact during tests.
+*   **Controlled Recipients:** Use phone numbers you own or those belonging to informed colleagues for testing airtime/data delivery. **Do not** send unsolicited test transactions to actual customers.
+*   **Low Wallet Balance:** Maintain only a minimal balance in your vendor wallet, sufficient only for the small test transactions you plan to execute. Avoid large top-ups for testing.
+*   **Use `clientRef` Consistently:** **Always** include a unique and identifiable `clientRef` (e.g., `test-svr-airtime-001`, `dev-data-xyz-timestamp`) in your `POST /v1/sales/initiate` requests. This is vital for:
+    *   Identifying test transactions in your server logs.
+    *   Reconciling results received via webhooks or status checks.
+    *   Assisting Fikisha support in tracing specific requests if issues occur.
+*   **Isolate Test Logic:** Ensure your testing scripts or environments are clearly distinct from your production deployment to prevent accidental live transactions.
+
+## 3. Testing Specific Scenarios (HTTP Endpoints)
+
+Use tools like `cURL`, Postman, or HTTP libraries in your preferred language (`axios`, `requests`, etc.) to test these cases:
+
+*   **Authentication (`401 Unauthorized`):**
+    *   Send requests without the `X-Vendor-ID` header.
+    *   Send requests without the `X-API-Key` header.
+    *   Send requests with an incorrect `X-Vendor-ID`.
+    *   Send requests with an incorrect `X-API-Key`.
+*   **Input Validation (`400 Bad Request`):**
+    *   `POST /v1/sales/initiate`:
+        *   Omit required fields (`saleType`, `totalCost`, type-specific fields like `phoneNumber`, `amount`, `bundleId`, `productId`, `quantity`).
+        *   Send invalid data types (e.g., string for `amount`).
+        *   Send invalid formats (e.g., bad `phoneNumber`).
+        *   Send values outside allowed ranges (e.g., `amount` too low).
+        *   Send mismatched `amount` and `totalCost` for airtime.
+    *   `GET /v1/wallet/transactions`: Send invalid `limit` (e.g., > 100), invalid date formats.
+*   **Wallet Balance (`402 Payment Required`):**
+    *   Send a valid `POST /v1/sales/initiate` request where `totalCost` exceeds your current wallet balance (check via `GET /v1/wallet/balance` first).
+*   **Resource Not Found (`404 Not Found`):**
+    *   `POST /v1/sales/initiate`: Use a non-existent `bundleId` or `productId`.
+    *   Call non-existent endpoint paths.
+*   **Precondition Failed (`412 Precondition Failed`):**
+    *   `POST /v1/sales/initiate` (`physical_good`): Request `quantity` greater than available stock (check product details if possible, or test with known low-stock item).
+*   **Successful Asynchronous Request (`202 Accepted`):**
+    *   Send a valid `POST /v1/sales/initiate` request with sufficient funds.
+    *   **Expected Outcome:** Receive `HTTP 202 Accepted` and a JSON body with `{ "success": true, "requestId": "..." }`. Verify the `totalCost` was deducted from your wallet balance immediately (use `GET /v1/wallet/balance`).
+*   **Successful Synchronous Request (`200 OK`):**
+    *   Send valid `GET` requests like `/v1/wallet/balance` or `/v1/wallet/transactions`.
+    *   **Expected Outcome:** Receive `HTTP 200 OK` and the expected JSON data payload.
+
+## 4. Testing Asynchronous Results & Webhooks
+
+The most critical part is verifying the end-to-end flow for asynchronous operations initiated via `POST /v1/sales/initiate`:
+
+*   **Webhook Endpoint:**
+    *   Set up a publicly accessible HTTPS endpoint (use tools like [ngrok](https://ngrok.com/) for local testing).
+    *   Configure this URL in the Fikisha Vendor Portal (when available).
+    *   Ensure it responds with `200 OK` *immediately* upon receiving a POST request.
+    *   Log the full incoming webhook payload (headers and body).
+*   **Trigger Test Events:** Initiate sales using the API with your test numbers/products.
+*   **Verify Payloads:** Check that your webhook endpoint receives the expected payloads for both `sale.request.completed` and `sale.request.failed` events.
+*   **Verify Data:** Confirm the data in the webhook payload (e.g., `requestId`, `clientRef`, `status`, `pin`, `failureReason`) is correct and allows you to update your system accurately.
+*   **Test Idempotency:** Manually re-send a captured webhook payload to your endpoint. Verify that your processing logic correctly identifies it as a duplicate (using `eventId`) and does not process it twice.
+*   **Test Endpoint Failures:** Temporarily make your webhook endpoint return `500` errors or timeouts. Observe if Fikisha retries the delivery (details of retry policy TBD).
+
+## 5. Mocking API Responses (Server-Side Testing)
+
+When testing the parts of *your backend system* that call the Fikisha API:
+
+*   **Use HTTP Mocking Libraries:** Employ libraries appropriate for your language/framework (e.g., `nock` for Node.js, `responses` or `unittest.mock` for Python, `WireMock` for Java) to intercept outgoing HTTP requests from your server to Fikisha endpoints.
+*   **Simulate Fikisha Responses:** Configure your mocks to return predefined responses for different scenarios:
+    *   `202 Accepted` success response for `POST /v1/sales/initiate`.
+    *   `200 OK` success response with sample data for `GET` endpoints.
+    *   `401`, `400`, `402`, `500` error responses with appropriate JSON bodies.
+*   **Test Your Logic:** Verify that your system correctly handles these mocked success and error responses (e.g., updates internal state, logs errors, retries appropriately).
+
+## Reporting Issues
+
+If you encounter unexpected Fikisha API behavior or discrepancies during live testing:
+
+1.  Gather: Your **Vendor ID**, the **`requestId`** (from the `202 Accepted` response), your **`clientRef`** (if used), **timestamps**, the **full request payload**, and the **full response** received (status code and body).
+2.  Contact Fikisha support at [support@fikisha.app](mailto:support@fikisha.app) with these details.

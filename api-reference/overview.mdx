@@ -1,0 +1,101 @@
+---
+title: 'API Overview'
+description: 'General conventions, authentication, and structure for the Fikisha Vendor HTTP API.'
+---
+
+import { Info, Warning } from 'mintlify/components';
+
+# API Reference Overview
+
+This section provides detailed technical specifications for integrating with the Fikisha Vendor system via its **HTTP API Endpoints**. These endpoints allow your backend services or automated tools to programmatically interact with Fikisha features like initiating sales and managing wallet information.
+
+## Interaction Model: API Endpoints
+
+This documentation primarily covers the **HTTP Endpoints** which are designed for **server-to-server** communication.
+
+-   **Authentication:** Requires API Keys (`X-Vendor-ID`, `X-API-Key`) passed in HTTP headers.
+-   **Invocation:** Standard HTTP requests (`GET`, `POST`, etc.) made from your server.
+-   **Use Cases:** Automating sales from your platform, backend scripts, integrating with other business systems.
+
+<Info>
+  **Note on Callable Functions:** Fikisha's official client applications (Mobile App, Web Portal) primarily use **Firebase Callable Functions** invoked via the Firebase SDKs. These rely on user authentication (Firebase Auth tokens) managed by the SDK. While those functions power the apps, this API reference focuses on the external HTTP endpoints available for direct integration by vendor systems.
+</Info>
+
+## Base URL
+
+All production HTTP API endpoints are accessed via the following base URL:
+
+`https://api.fikisha.app/v1/`
+
+*(Replace `https://api.fikisha.app` with the actual production base URL if different. Specify if a separate staging/testing URL exists.)*
+
+## Authentication
+
+All HTTP API endpoints require authentication using your Vendor ID and API Key.
+
+```plaintext
+X-Vendor-ID: YOUR_VENDOR_ID_HERE
+X-API-Key: YOUR_SECRET_API_KEY_HERE
+Content-Type: application/json
+Accept: application/json
+```
+
+Refer to the full [Authentication Guide](/authentication) for details on generating keys and security best practices.
+
+## Request & Response Format
+
+**Content Type:** All requests requiring a body must send `application/json`. Your client should also accept `application/json` responses.
+
+**JSON Payloads:** Data is sent and received in JSON format.
+
+**Standard Response Structure:**
+
+Responses generally follow a consistent structure:
+
+```json
+{
+  "success": true,
+  "message": "Operation successful or request accepted.", // Optional
+  // ... other data specific to the endpoint ...
+  "requestId": "...", // Often included for async ops tracking
+  "transactionId": "..." // Often included for async ops tracking
+}
+```
+
+```json
+{
+  "success": false,
+  "error": "A human-readable description of the error.",
+  "code": "specific_error_code" // Machine-readable identifier
+}
+```
+
+Refer to the [Error Handling Guide](/error-handling) for detailed status codes and error code explanations.
+
+## Asynchronous Operations
+
+<Warning>
+  Operations involving external providers (e.g., MNOs for airtime/data, payment gateways) are typically **asynchronous**.
+</Warning>
+
+1. **Initiation:** You send a request to an endpoint like `POST /v1/sales/initiate`.
+2. **Acceptance:** If validation passes, the API responds immediately with HTTP `202 Accepted` and a JSON body containing a unique `requestId`. This confirms the task is queued, not completed.
+3. **Processing:** Fikisha processes the request in the background.
+4. **Notification:** The final status (`completed` or `failed`) is communicated asynchronously.
+   - **Webhooks (Recommended):** Configure an endpoint on your server to receive real-time status updates. See the [Webhooks Guide](/guides/webhooks).
+   - **Polling (Alternative):** Periodically query a status endpoint (details TBD) using the `requestId`.
+
+## Rate Limiting
+
+To ensure system stability and fair usage, API endpoints are subject to rate limits.
+
+- If you exceed the limit, you will receive an HTTP `429 Too Many Requests` response.
+- Implement strategies like exponential backoff and retries in your client if you encounter rate limiting.
+- Contact support if you consistently hit limits or anticipate significantly high request volumes.
+
+## Versioning
+
+- The API uses path versioning (currently `/v1/`).
+- We aim for backward compatibility within v1. Non-breaking changes (like adding new optional fields or endpoints) may occur without a version bump.
+- Any breaking changes will be introduced under a new version path (e.g., `/v2/`).
+- Deprecation of older versions will be communicated clearly and with ample notice.

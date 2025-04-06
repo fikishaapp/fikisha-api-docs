@@ -1,0 +1,193 @@
+---
+title: 'Bulk Request Airtime'
+# API Endpoint using POST
+api: 'POST https://api.fikisha.app/v1/airtime/bulk' 
+description: 'Initiate airtime delivery for multiple recipients via a single API call.'
+---
+
+import { ParamField, ResponseField, Expandable, CodeGroup, Info, Note, Warning } from 'mintlify/components';
+
+# Bulk Request Airtime Delivery
+
+Submits multiple asynchronous airtime delivery requests (Direct or PIN) efficiently in a single HTTP API call. Each valid request within the batch is queued individually for processing. This endpoint requires API Key authentication.
+
+<Warning>
+  This endpoint is suitable for server-to-server integrations or automated batch processing. Ensure proper security and rate limit considerations. Check API limits (e.g., max 100-500 requests per call) with Fikisha support.
+</Warning>
+
+## Authentication
+
+This endpoint requires **API Key Authentication**. Include your `X-Vendor-ID` and `X-API-Key` in the HTTP request headers.
+
+```http
+POST /v1/airtime/bulk HTTP/1.1
+Host: api.fikisha.app # Replace with actual host
+Content-Type: application/json
+Accept: application/json
+X-Vendor-ID: YOUR_VENDOR_ID_HERE
+X-API-Key: YOUR_SECRET_API_KEY_HERE
+
+{ ... request body ... }
+```
+
+See the [Authentication Guide](/authentication) for details.
+
+## Request Body
+
+The request body contains an array of individual airtime requests.
+
+<ParamField body="airtimeRequests" type="array" required>
+  An array of objects, each representing a single airtime request.
+  
+  <Expandable>
+    <ParamField body="saleType" type="string" required fixed="direct_airtime | pin_airtime">
+      Specifies if it's a direct top-up (`"direct_airtime"`) or PIN generation (`"pin_airtime"`).
+    </ParamField>
+    
+    <ParamField body="phoneNumber" type="string" required>
+      Recipient's phone number, including country code (e.g., `+254712345678`).
+    </ParamField>
+    
+    <ParamField body="amount" type="number" required>
+      Airtime amount (KES). Must meet minimum requirements (e.g., > 5 KES).
+    </ParamField>
+    
+    <ParamField body="provider" type="string" required>
+      Lowercase provider code (e.g., `safaricom`, `airtel`, `telkom`).
+    </ParamField>
+    
+    <ParamField body="clientRef" type="string">
+      *(Optional)* Your unique reference for **this specific request** within the bulk call (max 50 characters). Highly recommended for tracking individual items.
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+```json
+{
+  "airtimeRequests": [
+    {
+      "saleType": "direct_airtime",
+      "phoneNumber": "+254711111111",
+      "amount": 50,
+      "provider": "safaricom",
+      "clientRef": "bulk-job-1-item-1"
+    },
+    {
+      "saleType": "pin_airtime",
+      "phoneNumber": "+254722222222", // For logging PIN request
+      "amount": 100,
+      "provider": "airtel",
+      "clientRef": "bulk-job-1-item-2"
+    },
+    {
+      "saleType": "direct_airtime",
+      "phoneNumber": "+254733333333", // Example item that might fail validation
+      "amount": 3, // Below minimum
+      "provider": "safaricom",
+      "clientRef": "bulk-job-1-item-3"
+    }
+    // ... up to the API limit
+  ]
+}
+```
+
+<Note>
+  The total cost for the bulk request is calculated by summing the `amount` of all **valid** requests in the batch. This total cost is checked against your wallet balance before any requests are queued.
+</Note>
+
+## Response (202 Accepted or 4xx/5xx)
+
+Success (202 Accepted): Indicates the bulk request was received, partially or fully validated, and valid individual requests have been queued. The response body details which requests were accepted and which failed initial validation.
+
+Client/Server Errors (4xx/5xx): Indicates a problem with the overall request (e.g., authentication failure, malformed JSON, server error) before individual items could be processed.
+
+Success Response Body (202 Accepted):
+
+<ResponseField name="success" type="boolean" required>
+  Typically `true` if the bulk request itself was processed, even if some individual items failed validation. Check `validationErrors`.
+</ResponseField>
+
+<ResponseField name="message" type="string" required>
+  A summary message indicating how many requests were queued and how many failed validation (e.g., "Bulk request processed. 2 requests queued, 1 failed validation.").
+</ResponseField>
+
+<ResponseField name="requestIds" type="array" required>
+  An array containing the unique `sale_request` IDs (`sale_req_...`) generated for each **valid and queued** request. The order corresponds to the valid items in the input `airtimeRequests` array. Use these IDs to track individual statuses.
+</ResponseField>
+
+<ResponseField name="validationErrors" type="object | null" required>
+  An object detailing initial validation failures.
+  - **Key:** The zero-based index of the failed request in the original `airtimeRequests` array.
+  - **Value:** A string describing the validation error (e.g., "Amount must be greater than 5.").
+  - `null` if all requests passed initial validation.
+  *(Requests listed here were **not** queued and **not** charged)*.
+</ResponseField>
+
+```json
+{
+  "success": true,
+  "message": "Bulk request processed. 2 requests queued, 1 failed validation.",
+  "requestIds": [
+    "sale_req_abc...", // Corresponds to input index 0
+    "sale_req_def..."  // Corresponds to input index 1
+  ],
+  "validationErrors": {
+    "2": "Amount must be greater than 5." // Error for request at input index 2
+  }
+}
+```
+
+<Info>
+  Each successfully queued airtime request (identified by its `requestId` in the response) is processed asynchronously. Use [Webhooks](/guides/webhooks) or Firestore listeners on `/transactions/{requestId}` (or equivalent status check endpoint) to track the final status (`completed` or `failed`) and retrieve PINs for each one.
+</Info>
+
+## Possible Errors (Synchronous)
+
+Errors during the initial POST `/v1/airtime/bulk` request:
+
+| HTTP Code | Error Code (code) | Description |
+| --------- | ----------------- | ----------- |
+| 400 | invalid-argument | Invalid overall request structure (e.g., missing airtimeRequests array), exceeds bulk item limit, or contains structural JSON errors. Individual item validation errors are returned in the 202 response body. |
+| 401 | unauthenticated | Missing or invalid X-Vendor-ID or X-API-Key. |
+| 402 | insufficient-funds | Wallet balance is less than the total calculated cost of all initially valid requests in the batch. |
+| 429 | rate-limit-exceeded | Bulk request rate limit exceeded. |
+| 500 | internal | Server-side error during initial bulk validation or queueing. |
+
+Refer to the [Error Handling Guide](/error-handling) for details.
+
+## Example (Bulk Request via cURL)
+
+```bash
+# Replace YOUR_API_HOST, YOUR_VENDOR_ID, YOUR_API_KEY
+curl -X POST https://YOUR_API_HOST/v1/airtime/bulk \
+  -H "Content-Type: application/json" \
+  -H "Accept: application/json" \
+  -H "X-Vendor-ID: YOUR_VENDOR_ID" \
+  -H "X-API-Key: YOUR_API_KEY" \
+  -d '{
+    "airtimeRequests": [
+      {
+        "saleType": "direct_airtime",
+        "phoneNumber": "+254711111111",
+        "amount": 50,
+        "provider": "safaricom",
+        "clientRef": "bulk-job-2-item-1"
+      },
+      {
+        "saleType": "pin_airtime",
+        "phoneNumber": "+254722222222",
+        "amount": 100,
+        "provider": "airtel",
+        "clientRef": "bulk-job-2-item-2"
+      }
+    ]
+  }'
+
+# Expected Response (on success): HTTP 202 Accepted
+# {
+#   "success": true,
+#   "message": "Bulk request processed. 2 requests queued, 0 failed validation.",
+#   "requestIds": [ "sale_req_...", "sale_req_..." ],
+#   "validationErrors": null
+# }
+```

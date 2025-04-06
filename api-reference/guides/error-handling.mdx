@@ -1,0 +1,85 @@
+---
+title: 'Error Handling'
+description: 'Understand and handle HTTP error responses from the Fikisha Vendor API.'
+---
+
+import { Tip } from 'mintlify/components';
+
+# Error Handling
+
+The Fikisha Vendor HTTP API uses standard HTTP status codes and a consistent JSON error format to indicate problems with your API requests. Proper error handling is essential for building a reliable integration.
+
+## HTTP Status Codes
+
+The API uses conventional HTTP status codes to indicate the success or failure of an API request.
+
+-   **`2xx` Success:**
+    -   `200 OK`: The request was successful (typically for synchronous `GET` requests like fetching balance or transactions).
+    -   `202 Accepted`: The request was successfully received and **queued for asynchronous processing** (common for `POST /v1/sales/initiate`). This *does not* guarantee the final outcome of the operation. Check the response body for a `requestId` to track progress.
+-   **`4xx` Client Errors:** Indicate an issue with your request.
+    -   `400 Bad Request`: The request was malformed, contained invalid syntax, or missing required parameters. Check the `error` message and `code` in the response body for details.
+    -   `401 Unauthorized`: Authentication failed. Your `X-Vendor-ID` or `X-API-Key` header is missing, invalid, or deactivated.
+    -   `402 Payment Required`: Your vendor wallet has insufficient funds to cover the cost of the requested operation (e.g., for `POST /v1/sales/initiate`).
+    -   `403 Forbidden`: You are authenticated correctly, but you do not have permission to access the requested resource or perform the action.
+    -   `404 Not Found`: The requested endpoint path or a specific resource ID (like a `bundleId` or `productId`) could not be found.
+    -   `412 Precondition Failed`: A condition necessary for the request was not met (e.g., attempting to purchase an out-of-stock item).
+    -   `429 Too Many Requests`: Your application has exceeded the API rate limits. Implement exponential backoff and retry logic.
+-   **`5xx` Server Errors:** Indicate a problem on Fikisha's end.
+    -   `500 Internal Server Error`: An unexpected error occurred on the Fikisha server. This is usually temporary; retrying later might succeed. If persistent, contact support.
+    -   `503 Service Unavailable`: The Fikisha API or a required downstream service is temporarily unavailable (e.g., during maintenance). Retry the request after a short delay.
+
+## JSON Error Response Body
+
+When an API request results in a `4xx` or `5xx` HTTP status code, the response body will contain a JSON object with details about the error:
+
+```json
+{
+  "success": false,
+  "error": "A human-readable description of the specific error encountered.",
+  "code": "machine_readable_error_code" // A string identifier for the error type
+}
+```
+
+- **success**: Always false for error responses.
+- **error**: Provides a clear explanation of the problem intended for developers or logs. Do not typically show this raw message directly to end-users.
+- **code**: A stable, machine-readable string identifying the specific error category. Use this code for programmatic handling in your application logic.
+
+## Common Error Codes (code Values)
+
+This table lists common code values you might encounter in the JSON error body. Refer to specific endpoint documentation for any endpoint-specific codes.
+
+| code | Description | Typical HTTP Status |
+| ---- | ----------- | ------------------- |
+| unauthenticated | Missing or invalid API Key/Vendor ID. | 401 |
+| permission-denied | Credentials valid, but lack permission for the action. | 403 |
+| invalid-argument | Bad request parameters (missing, invalid format/value). | 400 |
+| insufficient-funds | Wallet balance too low for the operation. | 402 |
+| not-found | Generic resource not found. | 404 |
+| wallet-not-found | Wallet for the specified Vendor ID does not exist. | 404 / 500 |
+| product-not-found | Specified productId or bundleId is invalid/inactive. | 404 |
+| failed-precondition | Operation prerequisite not met (e.g., out of stock). | 412 |
+| rate-limit-exceeded | API request frequency limit surpassed. | 429 |
+| internal | Unexpected Fikisha server error. | 500 |
+| unavailable | Fikisha service or dependency temporarily down. | 503 |
+| provider-error | Error communicating with an external provider (MNO). | 500 / 503 |
+| payment-failed | Error related to payment processing (less common here). | 500 / 402 |
+
+<Tip>
+  Always prioritize checking the HTTP status code first, then parse the JSON body to get the specific `code` and `error` message for detailed handling and logging.
+</Tip>
+
+## General Best Practices for Handling Errors
+
+1. **Check HTTP Status**: Always verify the HTTP status code of the response before attempting to parse the body.
+
+2. **Parse JSON Body**: For 4xx/5xx responses, parse the JSON body to extract the code and error message.
+
+3. **Use the code**: Implement conditional logic based on the machine-readable code for specific error handling (e.g., prompt for top-up on insufficient-funds, retry on unavailable or rate-limit-exceeded).
+
+4. **Log Detailed Errors**: Log the full response (status code, headers, body) and the original request details when errors occur to aid debugging.
+
+5. **User-Friendly Messages**: Translate technical error messages or codes into clear, actionable feedback for your end-users where appropriate. Avoid exposing raw API error strings directly.
+
+6. **Retry Strategy**: Implement a retry mechanism with exponential backoff for transient errors like 429 Too Many Requests, 500 Internal Server Error, and 503 Service Unavailable. Do not retry errors like 400, 401, 402, 404 without fixing the underlying issue in the request or user state.
+
+7. **Monitor**: Track your API error rates and types to identify recurring problems in your integration or potential issues with the Fikisha API.

@@ -1,34 +1,59 @@
-## introduction.mdx
-
 ---
 title: 'Introduction'
-description: 'Welcome to the Fikisha Vendor API documentation'
+description: 'Welcome to the Fikisha Vendor API documentation. Integrate airtime, data, and more via HTTP endpoints.'
 ---
+
+import { Card, CardGroup, Icon, Info } from 'mintlify/components';
 
 # Fikisha Vendor API
 
-Welcome to the Fikisha Vendor API documentation. This API allows vendors to integrate with the Fikisha platform to sell airtime, data bundles, and other products programmatically.
+Welcome! This documentation provides everything you need to integrate the Fikisha Vendor API into your backend applications or services. Empower your platform by programmatically initiating the sale of digital products like airtime and data bundles using secure HTTP requests.
 
-## What You Can Do
+## Who is this API for?
 
-With the Fikisha Vendor API, you can:
+This API documentation focuses on **server-to-server integrations** and is designed for:
 
-- **Sell Airtime**: Deliver airtime to any customer's phone number
-- **Sell Data Bundles**: Purchase data bundles for customers
-- **Manage Wallet**: Check balance and transaction history
-- **Retrieve Products**: Get available products and bundles
+-   **Developers** building backend systems, kiosks, agency banking applications, or utility payment platforms that need to trigger Fikisha sales.
+-   **Businesses** looking to automate airtime or data bundle distribution from their own servers.
+-   **Fikisha Vendors** wanting to build custom backend tools or scripts that leverage their accounts.
+
+<Info>
+  If you are building a client-side application (like the official Fikisha Vendor Mobile App or Web Portal), you will likely interact with the backend via **Firebase Callable Functions** using the Firebase SDKs, which handle user authentication automatically. This documentation primarily covers the **HTTP Endpoints** secured by API Keys.
+</Info>
+
+## Core Capabilities (via API Endpoints)
+
+Using the Fikisha Vendor API endpoints, your server can:
+
+-   <Icon name="paper-plane" color="#F7924F" /> **Initiate Airtime Sales:** Request direct top-ups or PIN generation via the `/sales/initiate` endpoint.
+-   <Icon name="wifi" color="#F7924F" /> **Initiate Data Bundle Sales:** Request specific data bundles via the `/sales/initiate` endpoint.
+-   <Icon name="cube" color="#F7924F" /> **Initiate Physical Good Sales:** Trigger fulfillment via the `/sales/initiate` endpoint.
+-   <Icon name="wallet" color="#F7924F" /> **Check Wallet Balance:** Retrieve current balance using the `/wallet/balance` endpoint.
+-   <Icon name="list-ul" color="#F7924F" /> **Get Wallet Transactions:** Fetch transaction history using the `/wallet/transactions` endpoint.
+-   <Icon name="list" color="#F7924F" /> **List Data Bundles:** Retrieve available data bundles using the `/data/bundles` endpoint (conceptual).
+-   <Icon name="arrow-up-from-dotted-line" color="#F7924F" /> **Initiate Withdrawals (Future):** Programmatically request wallet withdrawals (Endpoint TBD).
+
+## How it Works
+
+1.  **Authentication:** Your server authenticates requests using your unique **Vendor ID** and secret **API Key** passed in HTTP headers.
+2.  **Request Initiation:** You send `POST` or `GET` requests to specific Fikisha API endpoints (e.g., `/v1/sales/initiate`, `/v1/wallet/balance`).
+3.  **Asynchronous Processing:** For sales (`/v1/sales/initiate`), Fikisha validates your request and wallet balance, then queues the task. You receive an immediate `202 Accepted` response.
+4.  **Status Updates:** The final outcome (`completed` or `failed`) is communicated asynchronously, ideally via [Webhooks](/guides/webhooks) configured to your server.
 
 ## Getting Started
 
-To get started with the Fikisha Vendor API:
+Ready to integrate?
 
-1. [Sign up](https://vendor.fikisha.com/signup) for a Fikisha Vendor account
-2. Go to the API Integration section in your dashboard
-3. Generate your Vendor ID and API Key
-4. Use these credentials in your API requests
+1.  **Create Account:** Sign up on the [Fikisha Vendor Portal](https://vendor.fikisha.com/signin).
+2.  **Generate Credentials:** Obtain your **Vendor ID** and **API Key** from the [Vendor Dashboard](https://vendor.fikisha.com/dashboard) (API Credentials section). **Keep your API Key secret!**
+3.  **Fund Wallet:** Ensure your vendor wallet has funds via the [Dashboard](https://vendor.fikisha.com/dashboard).
+4.  **Follow the Quickstart:** Make your first API call using our [Quickstart Guide](/quickstart), which focuses on the HTTP endpoint approach.
 
-<Card title="Ready to dive in?" icon="code" href="/quickstart">
-  Check out our quickstart guide to make your first API request
-</Card>
-
----
+<CardGroup col={2}>
+  <Card title="Quickstart (HTTP)" icon="rocket" href="/quickstart">
+    Make your first API endpoint call.
+  </Card>
+  <Card title="Authentication" icon="key" href="/authentication">
+    Learn about API Key security.
+  </Card>
+</CardGroup>

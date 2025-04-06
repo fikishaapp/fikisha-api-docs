@@ -1,0 +1,153 @@
+---
+title: 'Purchase Data Bundle'
+# API Endpoint using POST via the unified sales initiator
+api: 'POST https://api.fikisha.app/v1/sales/initiate' 
+description: 'Initiate the purchase of a specific data bundle for a customer via API.'
+---
+
+import { ParamField, ResponseField, Expandable, CodeGroup, Info, Important } from 'mintlify/components';
+
+# Purchase Data Bundle
+
+Submits a request to purchase a specific data bundle for a customer's phone number using the `/v1/sales/initiate` endpoint. This operation requires API Key authentication and is processed asynchronously.
+
+## Authentication
+
+This endpoint requires **API Key Authentication**. Include your `X-Vendor-ID` and `X-API-Key` in the HTTP request headers.
+
+```http
+POST /v1/sales/initiate HTTP/1.1
+Host: api.fikisha.app # Replace with actual host
+Content-Type: application/json
+Accept: application/json
+X-Vendor-ID: YOUR_VENDOR_ID_HERE
+X-API-Key: YOUR_SECRET_API_KEY_HERE
+
+{ ... request body ... }
+```
+
+See the [Authentication Guide](/authentication) for details.
+
+## Request Body
+
+The JSON request body must specify `saleType` as "data_bundle" and include details about the bundle and recipient.
+
+<ParamField body="saleType" type="string" required fixed="data_bundle">
+  Must be exactly `"data_bundle"`.
+</ParamField>
+
+<ParamField body="phoneNumber" type="string" required>
+  The recipient's phone number, including the country code (e.g., `+254712345678`).
+</ParamField>
+
+<ParamField body="bundleId" type="string" required>
+  The unique ID of the data bundle to purchase. Obtain this from the [List Data Bundles](/api-reference/data/list-bundles) endpoint.
+</ParamField>
+
+<ParamField body="provider" type="string" required>
+  The mobile network provider code (e.g., `safaricom`). **Must match** the provider associated with the specified `bundleId`.
+</ParamField>
+
+<ParamField body="totalCost" type="number" required>
+  The **exact price** of the selected `bundleId`. This value is validated against the bundle's price and your wallet balance before queueing. Get the price from the [List Data Bundles](/api-reference/data/list-bundles) response.
+</ParamField>
+
+<ParamField body="bundleName" type="string">
+  *(Optional but Recommended)* The name of the bundle (e.g., "Weekly 2GB"). Include for clearer logging and potential use in webhooks/confirmations.
+</ParamField>
+
+<ParamField body="clientRef" type="string">
+  *(Optional)* Your unique reference string for this specific request (max 50 characters). Useful for tracking and reconciliation.
+</ParamField>
+
+```json
+{
+  "saleType": "data_bundle",
+  "phoneNumber": "+254712345678",
+  "bundleId": "saf_weekly_2gb", // ID obtained from listing bundles
+  "provider": "safaricom",      // Must match the bundle's provider
+  "totalCost": 250,             // Must match the price of 'saf_weekly_2gb'
+  "bundleName": "Weekly 2GB",   // Recommended for clarity
+  "clientRef": "cust_order_987_data"
+}
+```
+
+## Response (202 Accepted)
+
+If the request is valid (authentication, parameters, wallet balance, bundle exists) and successfully queued, the API responds with HTTP 202 Accepted.
+
+<ResponseField name="success" type="boolean" required>
+  Always `true` if the request was accepted for processing.
+</ResponseField>
+
+<ResponseField name="requestId" type="string" required>
+  The unique Fikisha ID generated for this specific sale request. Use this ID to track the asynchronous process.
+</ResponseField>
+
+<ResponseField name="message" type="string">
+  *(Optional)* A confirmation message, e.g., "Sale request accepted and queued.".
+</ResponseField>
+
+<ResponseField name="clientRef" type="string">
+  *(Optional)* Your reference ID, echoed back if provided in the request.
+</ResponseField>
+
+```json
+{
+  "success": true,
+  "requestId": "sale_req_xyz789abc123",
+  "message": "Sale request accepted and queued.",
+  "clientRef": "cust_order_987_data"
+}
+```
+
+<Important>
+  A `202 Accepted` response **only confirms the request is queued**. It does **not** guarantee the data bundle was successfully provisioned. Monitor the status asynchronously using the `requestId`.
+</Important>
+
+## Monitoring Status
+
+- **Webhooks (Recommended)**: Configure Webhooks to receive `sale.request.completed` or `sale.request.failed` events, referencing the `requestId`.
+
+- **Polling (Alternative)**: Periodically query a status endpoint (details TBD) using the `requestId`.
+
+## Possible Errors (Synchronous)
+
+Errors during the initial POST request will result in 4xx or 5xx HTTP status codes with a JSON error body.
+
+| HTTP Code | Error Code (code) | Description |
+| --------- | ----------------- | ----------- |
+| 400 | invalid-argument | Missing/invalid fields (saleType, bundleId, totalCost mismatch, etc.). |
+| 401 | unauthenticated | Missing or invalid X-Vendor-ID or X-API-Key. |
+| 402 | insufficient-funds | Wallet balance below the bundle's totalCost. |
+| 404 | product-not-found | The specified bundleId does not exist or is inactive. |
+| 500 | internal | Server-side error during validation or queueing. |
+
+Refer to the [Error Handling Guide](/error-handling) for details.
+
+## Example (Purchase via cURL)
+
+```bash
+# Replace YOUR_API_HOST, YOUR_VENDOR_ID, YOUR_API_KEY
+curl -X POST https://YOUR_API_HOST/v1/sales/initiate \
+  -H "Content-Type: application/json" \
+  -H "X-Vendor-ID: YOUR_VENDOR_ID" \
+  -H "X-API-Key: YOUR_API_KEY" \
+  -d '{
+    "saleType": "data_bundle",
+    "phoneNumber": "+254722222222",
+    "bundleId": "airtel_monthly_5gb", 
+    "provider": "airtel",
+    "totalCost": 500, 
+    "bundleName": "Monthly 5GB Freedom",
+    "clientRef": "backend-data-req-1122"
+  }'
+
+# Expected Response (on success): HTTP 202 Accepted
+# {
+#   "success": true,
+#   "requestId": "sale_req_...",
+#   "message": "Sale request accepted and queued.",
+#   "clientRef": "backend-data-req-1122"
+# }
+```
