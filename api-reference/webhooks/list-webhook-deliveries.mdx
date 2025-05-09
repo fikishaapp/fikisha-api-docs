@@ -10,6 +10,10 @@ import {
   Expandable,
   CodeGroup,
   Info,
+  Warning,
+  Card,
+  CardGroup,
+  Steps
 } from "mintlify/components";
 
 # List Webhook Deliveries
@@ -20,155 +24,178 @@ Retrieves a paginated list of delivery attempts for a specific webhook configura
 
 This endpoint requires **API Key Authentication**. Include your `X-Vendor-ID` and `X-API-Key` in the HTTP request headers.
 
-````http
+```http
 GET /v1/webhooks/whook_123456/deliveries?page=1&pageSize=10 HTTP/1.1
 Host: api.fikisha.app
 X-Vendor-ID: YOUR_VENDOR_ID_HERE
 X-API-Key: YOUR_SECRET_API_KEY_HERE
 Accept: application/json
-See the Authentication Guide for details.
-Path Parameters
-ParameterDescriptionwebhookIdThe unique identifier (whook_...) of the webhook to list deliveries for.
-Query Parameters
+```
+
+<Info>
+  See the [Authentication Guide](/authentication) for details on generating and using API keys.
+</Info>
+
+## Path Parameters
+
+<ParamField path="webhookId" type="string" required>
+  The unique identifier (whook_...) of the webhook to list deliveries for.
+</ParamField>
+
+## Query Parameters
+
 <ParamField query="page" type="integer">
   *(Optional)* Page number for pagination.
   - Default: `1`
 </ParamField>
+
 <ParamField query="pageSize" type="integer">
   *(Optional)* Number of delivery records to return per page.
   - Default: `20`
   - Maximum: `100`
 </ParamField>
+
 <ParamField query="status" type="string">
   *(Optional)* Filter by delivery status. Allowed values:
   - `success` - Successful deliveries (HTTP 2xx response)
   - `failed` - Failed deliveries (HTTP non-2xx response or timeout)
   - `pending` - Deliveries currently in progress
 </ParamField>
+
 <ParamField query="eventType" type="string">
   *(Optional)* Filter by event type (e.g., `transaction.completed`).
 </ParamField>
+
 <ParamField query="startDate" type="string">
   *(Optional)* Filter deliveries created on or after this date. Format: ISO 8601 (e.g., `2024-01-01T00:00:00Z`).
 </ParamField>
+
 <ParamField query="endDate" type="string">
   *(Optional)* Filter deliveries created on or before this date. Format: ISO 8601 (e.g., `2024-01-31T23:59:59Z`).
 </ParamField>
-Response (200 OK)
+
+## Response
+
+### Success Response (200 OK)
+
 <ResponseField name="success" type="boolean" required>
   Indicates if the request was successful (`true`).
 </ResponseField>
+
 <ResponseField name="data" type="object" required>
   Contains the webhook delivery list and pagination information.
   <Expandable>
     <ResponseField name="deliveries" type="array" required>
       An array of webhook delivery attempt objects.
-  <Expandable>
-    <ResponseField name="id" type="string" required>
-      The unique identifier for the delivery attempt.
+      <Expandable>
+        <ResponseField name="id" type="string" required>
+          The unique identifier for the delivery attempt.
+        </ResponseField>
+
+        <ResponseField name="webhookId" type="string" required>
+          The ID of the webhook configuration.
+        </ResponseField>
+
+        <ResponseField name="eventType" type="string" required>
+          The type of event that triggered this delivery (e.g., `transaction.completed`).
+        </ResponseField>
+
+        <ResponseField name="eventId" type="string" required>
+          The unique identifier of the event.
+        </ResponseField>
+
+        <ResponseField name="status" type="string" required>
+          The status of the delivery attempt: `success`, `failed`, or `pending`.
+        </ResponseField>
+
+        <ResponseField name="statusCode" type="integer">
+          *(Optional)* The HTTP status code received from your server.
+        </ResponseField>
+
+        <ResponseField name="responseTime" type="integer">
+          *(Optional)* The response time in milliseconds.
+        </ResponseField>
+
+        <ResponseField name="attempts" type="integer" required>
+          The number of attempts made to deliver this webhook (including retries).
+        </ResponseField>
+
+        <ResponseField name="errorMessage" type="string">
+          *(Optional)* Error message in case of delivery failure.
+        </ResponseField>
+
+        <ResponseField name="createdAt" type="string" required>
+          ISO 8601 timestamp of when the delivery was created.
+        </ResponseField>
+
+        <ResponseField name="lastAttemptedAt" type="string">
+          *(Optional)* ISO 8601 timestamp of the most recent delivery attempt.
+        </ResponseField>
+      </Expandable>
     </ResponseField>
 
-    <ResponseField name="webhookId" type="string" required>
-      The ID of the webhook configuration.
+    <ResponseField name="pagination" type="object" required>
+      Pagination metadata.
+      <Expandable>
+        <ResponseField name="totalItems" type="integer" required>
+          Total number of delivery attempts matching the filter criteria.
+        </ResponseField>
+
+        <ResponseField name="currentPage" type="integer" required>
+          The current page number.
+        </ResponseField>
+
+        <ResponseField name="pageSize" type="integer" required>
+          Number of items per page.
+        </ResponseField>
+
+        <ResponseField name="totalPages" type="integer" required>
+          Total number of pages available with the current pageSize.
+        </ResponseField>
+
+        <ResponseField name="hasNextPage" type="boolean" required>
+          Indicates if there are more pages after the current one.
+        </ResponseField>
+
+        <ResponseField name="hasPreviousPage" type="boolean" required>
+          Indicates if there are pages before the current one.
+        </ResponseField>
+      </Expandable>
     </ResponseField>
 
-    <ResponseField name="eventType" type="string" required>
-      The type of event that triggered this delivery (e.g., `transaction.completed`).
-    </ResponseField>
+    <ResponseField name="summary" type="object" required>
+      Summary statistics for the filtered deliveries.
+      <Expandable>
+        <ResponseField name="totalDeliveries" type="integer" required>
+          Total number of delivery attempts.
+        </ResponseField>
 
-    <ResponseField name="eventId" type="string" required>
-      The unique identifier of the event.
-    </ResponseField>
+        <ResponseField name="successful" type="integer" required>
+          Number of successful deliveries.
+        </ResponseField>
 
-    <ResponseField name="status" type="string" required>
-      The status of the delivery attempt: `success`, `failed`, or `pending`.
-    </ResponseField>
+        <ResponseField name="failed" type="integer" required>
+          Number of failed deliveries.
+        </ResponseField>
 
-    <ResponseField name="statusCode" type="integer">
-      *(Optional)* The HTTP status code received from your server.
-    </ResponseField>
+        <ResponseField name="pending" type="integer" required>
+          Number of pending deliveries.
+        </ResponseField>
 
-    <ResponseField name="responseTime" type="integer">
-      *(Optional)* The response time in milliseconds.
-    </ResponseField>
-
-    <ResponseField name="attempts" type="integer" required>
-      The number of attempts made to deliver this webhook (including retries).
-    </ResponseField>
-
-    <ResponseField name="errorMessage" type="string">
-      *(Optional)* Error message in case of delivery failure.
-    </ResponseField>
-
-    <ResponseField name="createdAt" type="string" required>
-      ISO 8601 timestamp of when the delivery was created.
-    </ResponseField>
-
-    <ResponseField name="lastAttemptedAt" type="string">
-      *(Optional)* ISO 8601 timestamp of the most recent delivery attempt.
+        <ResponseField name="successRate" type="number" required>
+          Percentage of successful deliveries (0-100).
+        </ResponseField>
+      </Expandable>
     </ResponseField>
   </Expandable>
 </ResponseField>
 
-<ResponseField name="pagination" type="object" required>
-  Pagination metadata.
+## Example Responses
 
-  <Expandable>
-    <ResponseField name="totalItems" type="integer" required>
-      Total number of delivery attempts matching the filter criteria.
-    </ResponseField>
+### Success Response with Deliveries
 
-    <ResponseField name="currentPage" type="integer" required>
-      The current page number.
-    </ResponseField>
-
-    <ResponseField name="pageSize" type="integer" required>
-      Number of items per page.
-    </ResponseField>
-
-    <ResponseField name="totalPages" type="integer" required>
-      Total number of pages available with the current pageSize.
-    </ResponseField>
-
-    <ResponseField name="hasNextPage" type="boolean" required>
-      Indicates if there are more pages after the current one.
-    </ResponseField>
-
-    <ResponseField name="hasPreviousPage" type="boolean" required>
-      Indicates if there are pages before the current one.
-    </ResponseField>
-  </Expandable>
-</ResponseField>
-
-<ResponseField name="summary" type="object" required>
-  Summary statistics for the filtered deliveries.
-
-  <Expandable>
-    <ResponseField name="totalDeliveries" type="integer" required>
-      Total number of delivery attempts.
-    </ResponseField>
-
-    <ResponseField name="successful" type="integer" required>
-      Number of successful deliveries.
-    </ResponseField>
-
-    <ResponseField name="failed" type="integer" required>
-      Number of failed deliveries.
-    </ResponseField>
-
-    <ResponseField name="pending" type="integer" required>
-      Number of pending deliveries.
-    </ResponseField>
-
-    <ResponseField name="successRate" type="number" required>
-      Percentage of successful deliveries (0-100).
-    </ResponseField>
-  </Expandable>
-</ResponseField>
-  </Expandable>
-</ResponseField>
-Example Response
-json{
+```json
+{
   "success": true,
   "data": {
     "deliveries": [
@@ -196,46 +223,38 @@ json{
         "errorMessage": "Server error: Internal Server Error",
         "createdAt": "2024-04-16T16:10:00Z",
         "lastAttemptedAt": "2024-04-16T16:20:00Z"
-      },
-      {
-        "id": "whdel_123458",
-        "webhookId": "whook_123456",
-        "eventType": "transaction.completed",
-        "eventId": "evt_abc125",
-        "status": "success",
-        "statusCode": 200,
-        "responseTime": 142,
-        "attempts": 1,
-        "createdAt": "2024-04-16T16:30:15Z",
-        "lastAttemptedAt": "2024-04-16T16:30:15Z"
       }
     ],
     "pagination": {
-      "totalItems": 157,
+      "totalItems": 45,
       "currentPage": 1,
-      "pageSize": 10,
-      "totalPages": 16,
+      "pageSize": 20,
+      "totalPages": 3,
       "hasNextPage": true,
       "hasPreviousPage": false
     },
     "summary": {
-      "totalDeliveries": 157,
-      "successful": 149,
-      "failed": 8,
+      "totalDeliveries": 45,
+      "successful": 42,
+      "failed": 3,
       "pending": 0,
-      "successRate": 94.9
+      "successRate": 93.33
     }
   }
 }
-Empty Results Response
-json{
+```
+
+### Empty Results Response
+
+```json
+{
   "success": true,
   "data": {
     "deliveries": [],
     "pagination": {
       "totalItems": 0,
       "currentPage": 1,
-      "pageSize": 10,
+      "pageSize": 20,
       "totalPages": 0,
       "hasNextPage": false,
       "hasPreviousPage": false
@@ -249,88 +268,144 @@ json{
     }
   }
 }
-Possible Errors
-HTTP CodeError TypeDescription400Invalid RequestInvalid query parameters.401Authentication RequiredMissing or invalid X-Vendor-ID or X-API-Key.403ForbiddenThe webhook ID does not belong to your vendor account.404Not FoundWebhook ID not found.500Internal Server ErrorServer-side error while retrieving webhook deliveries.
-See the Error Handling Guide for details.
-Example (Fetch Failed Webhook Deliveries)
+```
+
+## Error Responses
+
+| HTTP Code | Error Type | Description |
+|-----------|------------|-------------|
+| 401 | Authentication Required | Missing or invalid X-Vendor-ID or X-API-Key |
+| 403 | Forbidden | Insufficient permissions to list webhook deliveries |
+| 404 | Not Found | Webhook with the specified ID does not exist |
+| 500 | Internal Server Error | Server-side error while retrieving deliveries |
+
+<Info>
+  See the [Error Handling Guide](/guides/error-handling) for details on handling these errors.
+</Info>
+
+## Example Requests
+
 <CodeGroup>
-  <div>
+  <CodeGroup.Tab title="cURL">
     ```bash
     # Replace YOUR_VENDOR_ID, YOUR_API_KEY, and WEBHOOK_ID
-    curl -X GET "https://api.fikisha.app/v1/webhooks/whook_123456/deliveries?status=failed&page=1&pageSize=10" \
-    -H "Accept: application/json" \
-    -H "X-Vendor-ID: YOUR_VENDOR_ID" \
-    -H "X-API-Key: YOUR_API_KEY"
+    curl -X GET "https://api.fikisha.app/v1/webhooks/WEBHOOK_ID/deliveries?page=1&pageSize=20&status=success" \
+      -H "Accept: application/json" \
+      -H "X-Vendor-ID: YOUR_VENDOR_ID" \
+      -H "X-API-Key: YOUR_API_KEY"
     ```
-  </div>
-  <div>
+  </CodeGroup.Tab>
+  <CodeGroup.Tab title="JavaScript">
     ```javascript
     const axios = require('axios');
-async function listWebhookDeliveries(webhookId, params = {}) {
-  const url = `https://api.fikisha.app/v1/webhooks/${webhookId}/deliveries`;
-  const headers = {
-    'Accept': 'application/json',
-    'X-Vendor-ID': 'YOUR_VENDOR_ID', // Replace with your Vendor ID
-    'X-API-Key': 'YOUR_API_KEY'   // Replace with your API Key
-  };
 
-  try {
-    const response = await axios.get(url, { headers, params });
-    console.log(`Retrieved ${response.data.data.deliveries.length} delivery records`);
-    console.log(`Success rate: ${response.data.data.summary.successRate}%`);
-    return response.data.data;
-  } catch (error) {
-    console.error('API Error:', error.response ? error.response.data : error.message);
-    throw error;
-  }
-}
-
-// Example: Get failed webhook deliveries
-listWebhookDeliveries('whook_123456', {
-  status: 'failed',
-  page: 1,
-  pageSize: 10
-});
-````
-
-  </div>
-  <div>
-    ```python
-    import requests
-def list_webhook_deliveries(webhook_id, params=None):
-    url = f'https://api.fikisha.app/v1/webhooks/{webhook_id}/deliveries'
-    headers = {
+    async function listWebhookDeliveries(webhookId, options = {}) {
+      const url = `https://api.fikisha.app/v1/webhooks/${webhookId}/deliveries`;
+      const headers = {
         'Accept': 'application/json',
-        'X-Vendor-ID': 'YOUR_VENDOR_ID', # Replace with your Vendor ID
-        'X-API-Key': 'YOUR_API_KEY'   # Replace with your API Key
+        'X-Vendor-ID': 'YOUR_VENDOR_ID', // Replace with your Vendor ID
+        'X-API-Key': 'YOUR_API_KEY'   // Replace with your API Key
+      };
+      const params = {
+        page: options.page || 1,
+        pageSize: options.pageSize || 20,
+        status: options.status,
+        eventType: options.eventType,
+        startDate: options.startDate,
+        endDate: options.endDate
+      };
+
+      try {
+        const response = await axios.get(url, { headers, params });
+        console.log(`Retrieved ${response.data.data.deliveries.length} deliveries`);
+        return response.data.data;
+      } catch (error) {
+        console.error('API Error:', error.response ? error.response.data : error.message);
+        throw error;
+      }
     }
 
-    try:
-        response = requests.get(url, headers=headers, params=params)
-        response.raise_for_status()  # Raise exception for HTTP errors
-        data = response.json()
-        print(f"Retrieved {len(data['data']['deliveries'])} delivery records")
-        print(f"Success rate: {data['data']['summary']['successRate']}%")
-        return data['data']
-    except requests.exceptions.RequestException as e:
-        print(f'API Error: {e}')
-        if hasattr(e, 'response') and e.response is not None:
-            print(f'Status Code: {e.response.status_code}')
-            print(f'Response Text: {e.response.text}')
-        raise e
+    // Example: List successful deliveries for a webhook
+    listWebhookDeliveries('whook_123456', {
+      status: 'success',
+      pageSize: 20
+    }).then(data => {
+      console.log(`Total Deliveries: ${data.summary.totalDeliveries}`);
+      console.log(`Success Rate: ${data.summary.successRate}%`);
+      data.deliveries.forEach(delivery => {
+        console.log(`Delivery ${delivery.id}: ${delivery.eventType}`);
+        console.log(`Status: ${delivery.status} (${delivery.statusCode})`);
+        console.log(`Response Time: ${delivery.responseTime}ms`);
+      });
+    });
+    ```
+  </CodeGroup.Tab>
+  <CodeGroup.Tab title="Python">
+    ```python
+    import requests
+    from datetime import datetime, timezone
 
-# Example: Get failed webhook deliveries
+    def list_webhook_deliveries(webhook_id, options=None):
+        if options is None:
+            options = {}
+        
+        url = f'https://api.fikisha.app/v1/webhooks/{webhook_id}/deliveries'
+        headers = {
+            'Accept': 'application/json',
+            'X-Vendor-ID': 'YOUR_VENDOR_ID', # Replace with your Vendor ID
+            'X-API-Key': 'YOUR_API_KEY'   # Replace with your API Key
+        }
+        params = {
+            'page': options.get('page', 1),
+            'pageSize': options.get('pageSize', 20),
+            'status': options.get('status'),
+            'eventType': options.get('eventType'),
+            'startDate': options.get('startDate'),
+            'endDate': options.get('endDate')
+        }
 
-list_webhook_deliveries('whook_123456', {
-'status': 'failed',
-'page': 1,
-'pageSize': 10
-})
+        try:
+            response = requests.get(url, headers=headers, params=params)
+            response.raise_for_status()
+            data = response.json()
+            print(f"Retrieved {len(data['data']['deliveries'])} deliveries")
+            return data['data']
+        except requests.exceptions.RequestException as e:
+            print(f'API Error: {e}')
+            if hasattr(e, 'response') and e.response is not None:
+                print(f'Status Code: {e.response.status_code}')
+                print(f'Response Text: {e.response.text}')
+            raise e
 
-```
-  </div>
+    # Example: List successful deliveries for a webhook
+    data = list_webhook_deliveries('whook_123456', {
+        'status': 'success',
+        'pageSize': 20
+    })
+    print(f"Total Deliveries: {data['summary']['totalDeliveries']}")
+    print(f"Success Rate: {data['summary']['successRate']}%")
+    for delivery in data['deliveries']:
+        print(f"Delivery {delivery['id']}: {delivery['eventType']}")
+        print(f"Status: {delivery['status']} ({delivery['statusCode']})")
+        print(f"Response Time: {delivery['responseTime']}ms")
+    ```
+  </CodeGroup.Tab>
 </CodeGroup>
-<Info>
-  Monitoring failed webhook deliveries is crucial for maintaining reliable integrations. If you notice repeated failures, check your server logs, ensure your webhook endpoint is publicly accessible, and verify that it's responding correctly to webhook payloads.
-</Info>
+
+## Next Steps
+
+<CardGroup col={2}>
+  <Card title="Configure Webhooks" icon="settings" href="/api-reference/webhooks/configure-webhooks">
+    Learn how to configure new webhooks.
+  </Card>
+  <Card title="List Webhooks" icon="list" href="/api-reference/webhooks/list-webhooks">
+    View all configured webhooks.
+  </Card>
+  <Card title="Error Handling" icon="bug" href="/guides/error-handling">
+    Learn about error responses and handling.
+  </Card>
+  <Card title="Testing" icon="flask" href="/guides/testing">
+    Learn how to test your webhook integration.
+  </Card>
+</CardGroup>
 ```

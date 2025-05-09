@@ -3,7 +3,7 @@ title: 'Introduction'
 description: 'Welcome to the Fikisha Vendor API documentation. Integrate airtime, data, campaigns, and more via HTTP endpoints.'
 ---
 
-import { Card, CardGroup, Icon, Info } from 'mintlify/components';
+import { Card, CardGroup, Icon, Info, Steps } from 'mintlify/components';
 
 # Fikisha Vendor API
 
@@ -13,43 +13,91 @@ Welcome! This documentation provides everything you need to integrate the Fikish
 
 This API documentation focuses on **server-to-server integrations** and is designed for:
 
--   **Developers** building backend systems, kiosks, agency banking applications, or utility payment platforms that need to trigger Fikisha sales.
--   **Businesses** looking to automate airtime or data bundle distribution from their own servers.
--   **Fikisha Vendors** wanting to build custom backend tools or scripts that leverage their accounts.
--   **Marketing teams** creating and managing promotional campaigns through the API.
+<CardGroup col={2}>
+  <Card title="Developers" icon="code">
+    Building backend systems, kiosks, agency banking applications, or utility payment platforms that need to trigger Fikisha sales.
+  </Card>
+  <Card title="Businesses" icon="building">
+    Looking to automate airtime or data bundle distribution from their own servers.
+  </Card>
+  <Card title="Fikisha Vendors" icon="store">
+    Wanting to build custom backend tools or scripts that leverage their accounts.
+  </Card>
+  <Card title="Marketing Teams" icon="bullhorn">
+    Creating and managing promotional campaigns through the API.
+  </Card>
+</CardGroup>
 
 <Info>
   If you are building a client-side application (like the official Fikisha Vendor Mobile App or Web Portal), you will likely interact with the backend via **Firebase Callable Functions** using the Firebase SDKs, which handle user authentication automatically. This documentation primarily covers the **HTTP Endpoints** secured by API Keys.
 </Info>
 
-## Core Capabilities (via API Endpoints)
+## Core Capabilities
 
 Using the Fikisha Vendor API endpoints, your server can:
 
--   <Icon name="paper-plane" color="#F7924F" /> **Manage Airtime:** Create and track airtime transactions via the `/v1/airtime` endpoint.
--   <Icon name="wifi" color="#F7924F" /> **Manage Data Bundles:** Process mobile data bundles via the `/v1/mobiledata` endpoint.
--   <Icon name="address-book" color="#F7924F" /> **Manage Contacts:** Create contact groups and manage contacts with the `/v1/contact-groups` endpoints.
--   <Icon name="bullhorn" color="#F7924F" /> **Run Campaigns:** Create and monitor marketing campaigns with the `/v1/campaigns` endpoints.
--   <Icon name="cart-shopping" color="#F7924F" /> **Process Sales:** Manage sales operations with the `/v1/sales` endpoints.
--   <Icon name="clock-rotate-left" color="#F7924F" /> **Track Transactions:** Monitor all transactions using the `/v1/transactions` endpoints.
--   <Icon name="wallet" color="#F7924F" /> **Manage Wallet:** Check balance and transaction history via the `/v1/wallet` endpoints.
--   <Icon name="webhook" color="#F7924F" /> **Configure Webhooks:** Set up and monitor webhooks for real-time notifications.
+<Steps>
+  <Step title="Manage Airtime">
+    <Icon name="paper-plane" color="#F7924F" /> Create and track airtime transactions via the `/v1/airtime` endpoint.
+  </Step>
+  <Step title="Manage Data Bundles">
+    <Icon name="wifi" color="#F7924F" /> Process mobile data bundles via the `/v1/mobiledata` endpoint.
+  </Step>
+  <Step title="Manage Contacts">
+    <Icon name="address-book" color="#F7924F" /> Create contact groups and manage contacts with the `/v1/contact-groups` endpoints.
+  </Step>
+  <Step title="Run Campaigns">
+    <Icon name="bullhorn" color="#F7924F" /> Create and monitor marketing campaigns with the `/v1/campaigns` endpoints.
+  </Step>
+  <Step title="Process Sales">
+    <Icon name="cart-shopping" color="#F7924F" /> Manage sales operations with the `/v1/sales` endpoints.
+  </Step>
+  <Step title="Track Transactions">
+    <Icon name="clock-rotate-left" color="#F7924F" /> Monitor all transactions using the `/v1/transactions` endpoints.
+  </Step>
+  <Step title="Manage Wallet">
+    <Icon name="wallet" color="#F7924F" /> Check balance and transaction history via the `/v1/wallet` endpoints.
+  </Step>
+  <Step title="Configure Webhooks">
+    <Icon name="webhook" color="#F7924F" /> Set up and monitor webhooks for real-time notifications.
+  </Step>
+</Steps>
 
 ## How it Works
 
-1.  **Authentication:** Your server authenticates requests using your unique **Vendor ID** and secret **API Key** passed in HTTP headers.
-2.  **Request Initiation:** You send `POST` or `GET` requests to specific Fikisha API endpoints (e.g., `/v1/airtime`, `/v1/wallet/balance`).
-3.  **Asynchronous Processing:** For transaction operations, Fikisha validates your request and wallet balance, then queues the task. You receive an immediate response.
-4.  **Status Updates:** The final outcome (`completed` or `failed`) is communicated asynchronously, ideally via [Webhooks](/guides/webhooks) configured to your server.
+<Steps>
+  <Step title="Authentication">
+    Your server authenticates requests using your unique **Vendor ID** and secret **API Key** passed in HTTP headers.
+  </Step>
+  <Step title="Request Initiation">
+    You send `POST` or `GET` requests to specific Fikisha API endpoints (e.g., `/v1/airtime`, `/v1/wallet/balance`).
+  </Step>
+  <Step title="Asynchronous Processing">
+    For transaction operations, Fikisha validates your request and wallet balance, then queues the task. You receive an immediate response.
+  </Step>
+  <Step title="Status Updates">
+    The final outcome (`completed` or `failed`) is communicated asynchronously, ideally via [Webhooks](/guides/webhooks) configured to your server.
+  </Step>
+</Steps>
 
 ## Getting Started
 
 Ready to integrate?
 
-1.  **Create Account:** Sign up on the [Fikisha Vendor Portal](https://vendor.fikisha.app/signin).
-2.  **Generate Credentials:** Obtain your **Vendor ID** and **API Key** from the [Vendor Dashboard](https://vendor.fikisha.app/dashboard) (API Credentials section). **Keep your API Key secret!**
-3.  **Fund Wallet:** Ensure your vendor wallet has funds via the [Dashboard](https://vendor.fikisha.app/dashboard).
-4.  **Follow the Quickstart:** Make your first API call using our [Quickstart Guide](/quickstart), which focuses on the HTTP endpoint approach.
+<Steps>
+  <Step title="Create Account">
+    Sign up on the [Fikisha Vendor Portal](https://vendor.fikisha.app/signin).
+  </Step>
+  <Step title="Generate Credentials">
+    Obtain your **Vendor ID** and **API Key** from the [Vendor Dashboard](https://vendor.fikisha.app/dashboard) (API Credentials section). **Keep your API Key secret!**
+  </Step>
+  <Step title="Fund Wallet">
+    Ensure your vendor wallet has funds via the [Dashboard](https://vendor.fikisha.app/dashboard).
+  </Step>
+  <Step title="Follow the Quickstart">
+    Make your first API call using our [Quickstart Guide](/quickstart), which focuses on the HTTP endpoint approach.
+  </Step>
+</Steps>
 
 <CardGroup col={2}>
   <Card title="Quickstart (HTTP)" icon="rocket" href="/quickstart">

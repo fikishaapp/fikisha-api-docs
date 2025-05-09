@@ -3,7 +3,7 @@ title: 'API Overview'
 description: 'Complete reference for all Fikisha Vendor HTTP API endpoints'
 ---
 
-import { Info, Warning } from "mintlify/components";
+import { Info, Warning, Card, CardGroup, Steps } from "mintlify/components";
 
 # API Reference Overview
 
@@ -13,76 +13,165 @@ This section provides a comprehensive technical reference for all Fikisha Vendor
 
 All HTTP API endpoints require authentication using your Vendor ID and API Key passed in the HTTP headers:
 
-```plaintext
+```http
 X-Vendor-ID: YOUR_VENDOR_ID_HERE
 X-API-Key: YOUR_SECRET_API_KEY_HERE
 Content-Type: application/json
 Accept: application/json
-Refer to the full Authentication Guide for details on generating keys and security best practices.
-Base URL
+```
+
+<Info>
+  Refer to the full [Authentication Guide](/authentication) for details on generating keys and security best practices.
+</Info>
+
+## Base URL
+
 All production HTTP API endpoints are accessed via the following base URL:
+
+```http
 https://api.fikisha.app/v1/
-Endpoint Categories
-Airtime Operations
-MethodEndpointDescriptionPOST/airtimeCreate airtime transactions for one or more recipientsGET/transactions?type=airtimeRetrieve airtime transaction history with filtering optionsGET/transactions/{transactionId}Check the status of a specific airtime transaction
-Mobile Data Operations
-MethodEndpointDescriptionPOST/mobiledataCreate data bundle transactions for one or more recipientsGET/transactions?type=mobiledataRetrieve data bundle transaction history with filtering optionsGET/transactions/{transactionId}Check the status of a specific data bundle transaction
-Contact Management
-MethodEndpointDescriptionPOST/contact-groupsCreate a new contact groupGET/contact-groupsList all contact groupsPOST/contact-groups/{groupId}/contactsAdd contacts to a specific group
-Campaign Management
-MethodEndpointDescriptionPOST/campaignsCreate a new marketing campaignGET/campaignsList all campaigns with filtering optionsGET/campaigns/{campaignId}Get details of a specific campaign
-Sales Operations
-MethodEndpointDescriptionPOST/salesCreate a new saleGET/salesList sales with filtering optionsGET/sales/{saleId}Get details of a specific sale
-Transaction Management
-MethodEndpointDescriptionGET/transactionsList transactions with filtering optionsGET/transactions/{transactionId}Get details of a specific transaction
-Wallet Management
-MethodEndpointDescriptionGET/wallet/balanceRetrieve current wallet balanceGET/wallet/transactionsList wallet transactions with filtering options
-Webhook Management
-MethodEndpointDescriptionPOST/webhooksConfigure webhook endpoints for notificationsGET/webhooksList configured webhooksGET/webhooks/{webhookId}/deliveriesList webhook delivery attempts
-Common Request/Response Patterns
-Request Format
+```
 
-All POST requests require a JSON body with the appropriate structure for the endpoint
-All GET requests use query parameters for filtering and pagination
-All requests must include the authentication headers
+## Endpoint Categories
 
-Response Format
+### Airtime Operations
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/airtime` | Create airtime transactions for one or more recipients |
+| GET | `/transactions?type=airtime` | Retrieve airtime transaction history with filtering options |
+| GET | `/transactions/{transactionId}` | Check the status of a specific airtime transaction |
+
+### Mobile Data Operations
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/mobiledata` | Create data bundle transactions for one or more recipients |
+| GET | `/transactions?type=mobiledata` | Retrieve data bundle transaction history with filtering options |
+| GET | `/transactions/{transactionId}` | Check the status of a specific data bundle transaction |
+
+### Contact Management
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/contact-groups` | Create a new contact group |
+| GET | `/contact-groups` | List all contact groups |
+| POST | `/contact-groups/{groupId}/contacts` | Add contacts to a specific group |
+
+### Campaign Management
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/campaigns` | Create a new marketing campaign |
+| GET | `/campaigns` | List all campaigns with filtering options |
+| GET | `/campaigns/{campaignId}` | Get details of a specific campaign |
+
+### Sales Operations
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/sales` | Create a new sale |
+| GET | `/sales` | List sales with filtering options |
+| GET | `/sales/{saleId}` | Get details of a specific sale |
+
+### Transaction Management
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/transactions` | List transactions with filtering options |
+| GET | `/transactions/{transactionId}` | Get details of a specific transaction |
+
+### Wallet Management
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/wallet/balance` | Retrieve current wallet balance |
+| GET | `/wallet/transactions` | List wallet transactions with filtering options |
+
+### Webhook Management
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/webhooks` | Configure webhook endpoints for notifications |
+| GET | `/webhooks` | List configured webhooks |
+| GET | `/webhooks/{webhookId}/deliveries` | List webhook delivery attempts |
+
+## Common Request/Response Patterns
+
+### Request Format
+
+- All POST requests require a JSON body with the appropriate structure for the endpoint
+- All GET requests use query parameters for filtering and pagination
+- All requests must include the authentication headers
+
+### Response Format
+
 All API responses follow a consistent structure:
+
 Success Responses:
-json{
+```json
+{
   "success": true,
   "data": {
     // Response data specific to the endpoint
   }
 }
+```
+
 Error Responses:
-json{
+```json
+{
   "success": false,
   "error": "Error Type",
   "message": "A human-readable description of the error."
 }
-Asynchronous Operations
+```
+
+## Asynchronous Operations
+
 Many operations in the Fikisha API are asynchronous, particularly those involving external providers:
 
-You send a request to an endpoint (e.g., POST /sales, POST /airtime)
-The API validates your request and responds with a status code (typically HTTP 200 OK) and transaction details
-The final result is communicated via one of two methods:
+<Steps>
+  <Step title="Initial Request">
+    You send a request to an endpoint (e.g., POST /sales, POST /airtime)
+  </Step>
+  <Step title="Validation">
+    The API validates your request and responds with a status code (typically HTTP 200 OK) and transaction details
+  </Step>
+  <Step title="Result Communication">
+    The final result is communicated via one of two methods:
+    - **Webhooks (recommended)**: Real-time notifications sent to your configured endpoint
+    - **Status Polling**: Checking the status endpoint periodically using the ID returned in the initial response
+  </Step>
+</Steps>
 
-Webhooks (recommended): Real-time notifications sent to your configured endpoint
-Status Polling: Checking the status endpoint periodically using the ID returned in the initial response
+## Error Handling
 
+Refer to the [Error Handling Guide](/guides/error-handling) for detailed information on status codes, error structures, and handling strategies.
 
+## Rate Limiting
 
-Error Handling
-Refer to the Error Handling Guide for detailed information on status codes, error structures, and handling strategies.
-Rate Limiting
 API endpoints have rate limits to ensure system stability. The API implements rate limiting with the following constraints:
 
-Each endpoint is limited to 10 concurrent instances
-Batch requests support up to 1 million requests per batch
-Pagination is limited to 100 items per page
+<CardGroup col={2}>
+  <Card title="Concurrent Requests" icon="clock">
+    Each endpoint is limited to 10 concurrent instances
+  </Card>
+  <Card title="Batch Size" icon="layer-group">
+    Batch requests support up to 1 million requests per batch
+  </Card>
+  <Card title="Pagination" icon="list">
+    Pagination is limited to 100 items per page
+  </Card>
+  <Card title="Retry Strategy" icon="rotate">
+    Implement retry strategies with exponential backoff for optimal integration
+  </Card>
+</CardGroup>
 
-Exceeding these limits will result in an HTTP 429 Too Many Requests response. Implement retry strategies with exponential backoff for optimal integration.
+<Warning>
+  Exceeding these limits will result in an HTTP 429 Too Many Requests response.
+</Warning>
+
 <Info>
   If you anticipate high-volume usage, contact Fikisha support to discuss adjusted rate limits for your integration.
 </Info>

@@ -3,7 +3,7 @@ title: 'Error Handling'
 description: 'Comprehensive guide to handling errors from the Fikisha Vendor API.'
 ---
 
-import { Tip } from "mintlify/components";
+import { Tip, Warning, Info, Card, CardGroup, Steps } from "mintlify/components";
 
 # Error Handling
 
@@ -19,46 +19,69 @@ All API errors follow a consistent JSON format:
   "error": "Error Type",
   "message": "A human-readable description of the specific error encountered."
 }
+```
 
-success: Always false for error responses.
-error: A type identifier for the error category, useful for programmatic handling.
-message: A clear explanation of the problem intended for developers. This message may not be suitable for direct display to end-users.
+<Info>
+  - `success`: Always `false` for error responses
+  - `error`: A type identifier for the error category, useful for programmatic handling
+  - `message`: A clear explanation of the problem intended for developers. This message may not be suitable for direct display to end-users
+</Info>
 
-HTTP Status Codes
+## HTTP Status Codes
+
 The API uses conventional HTTP status codes to indicate the general category of response:
-2xx Success
 
-200 OK: The request was successful (typical for most requests).
-201 Created: The resource was successfully created (sometimes used for POST requests).
-202 Accepted: The request was accepted for processing (for some asynchronous operations).
+### 2xx Success
 
-4xx Client Errors
+| Status Code | Description |
+|-------------|-------------|
+| 200 OK | The request was successful (typical for most requests) |
+| 201 Created | The resource was successfully created (sometimes used for POST requests) |
+| 202 Accepted | The request was accepted for processing (for some asynchronous operations) |
 
-400 Bad Request: The request was malformed, contained invalid parameters, or was missing required fields.
-401 Unauthorized: Authentication failed. Your X-Vendor-ID or X-API-Key header is missing, invalid, or deactivated.
-403 Forbidden: Authentication successful, but you lack permission for the requested resource or action.
-404 Not Found: The requested endpoint or resource could not be found.
-429 Too Many Requests: You've exceeded the API rate limits. Implement exponential backoff and retry logic.
+### 4xx Client Errors
 
-5xx Server Errors
+| Status Code | Description |
+|-------------|-------------|
+| 400 Bad Request | The request was malformed, contained invalid parameters, or was missing required fields |
+| 401 Unauthorized | Authentication failed. Your `X-Vendor-ID` or `X-API-Key` header is missing, invalid, or deactivated |
+| 403 Forbidden | Authentication successful, but you lack permission for the requested resource or action |
+| 404 Not Found | The requested endpoint or resource could not be found |
+| 429 Too Many Requests | You've exceeded the API rate limits. Implement exponential backoff and retry logic |
 
-500 Internal Server Error: An unexpected error occurred on the Fikisha server.
-502 Bad Gateway: Error communicating with an upstream service or payment provider.
-503 Service Unavailable: The API or a required service is temporarily unavailable (e.g., during maintenance).
-504 Gateway Timeout: A timeout occurred while waiting for a response from an upstream service.
+### 5xx Server Errors
 
-Common Error Types
+| Status Code | Description |
+|-------------|-------------|
+| 500 Internal Server Error | An unexpected error occurred on the Fikisha server |
+| 502 Bad Gateway | Error communicating with an upstream service or payment provider |
+| 503 Service Unavailable | The API or a required service is temporarily unavailable (e.g., during maintenance) |
+| 504 Gateway Timeout | A timeout occurred while waiting for a response from an upstream service |
+
+## Common Error Types
+
 The API uses specific error values in the error response to provide more detail about the error type. Here's a list of common error types you may encounter:
-Error TypeDescriptionHTTP StatusAuthentication RequiredMissing or invalid API credentials.401Invalid RequestGeneric validation error (missing fields, invalid format).400Not FoundRequested resource not found.404ForbiddenInsufficient permissions for the requested operation.403Internal Server ErrorAn unexpected server-side error.500
-Error Handling Best Practices
+
+| Error Type | Description | HTTP Status |
+|------------|-------------|-------------|
+| Authentication Required | Missing or invalid API credentials | 401 |
+| Invalid Request | Generic validation error (missing fields, invalid format) | 400 |
+| Not Found | Requested resource not found | 404 |
+| Forbidden | Insufficient permissions for the requested operation | 403 |
+| Internal Server Error | An unexpected server-side error | 500 |
+
+## Error Handling Best Practices
+
 <Tip>
   Always check both the HTTP status code and the error type in the response body to make your error handling as robust as possible.
 </Tip>
-1. HTTP Status Code-Based Handling
-javascriptasync function makeApiRequest(endpoint, options) {
+
+### 1. HTTP Status Code-Based Handling
+
+```javascript
+async function makeApiRequest(endpoint, options) {
   try {
     const response = await fetch(`https://api.fikisha.app/v1${endpoint}`, options);
-
     const data = await response.json();
 
     // Check for success flag
@@ -102,9 +125,14 @@ javascriptasync function makeApiRequest(endpoint, options) {
     throw error;
   }
 }
-2. Error Type-Based Handling
+```
+
+### 2. Error Type-Based Handling
+
 For more specific handling, you can use the error value from the error response:
-javascriptasync function handleApiError(errorResponse) {
+
+```javascript
+async function handleApiError(errorResponse) {
   const { error, message } = errorResponse;
 
   switch (error) {
@@ -139,9 +167,14 @@ javascriptasync function handleApiError(errorResponse) {
       showGenericErrorMessage(message);
   }
 }
-3. Implementing Retry Logic
+```
+
+### 3. Implementing Retry Logic
+
 For transient errors (like rate limiting or temporary service unavailability), implement an exponential backoff strategy:
-javascriptasync function makeApiRequestWithRetry(endpoint, options, maxRetries = 3) {
+
+```javascript
+async function makeApiRequestWithRetry(endpoint, options, maxRetries = 3) {
   let retryCount = 0;
 
   while (retryCount < maxRetries) {
@@ -169,9 +202,14 @@ javascriptasync function makeApiRequestWithRetry(endpoint, options, maxRetries =
 
   throw new Error(`Failed after ${maxRetries} retries`);
 }
-4. Handling Asynchronous Operation Status
+```
+
+### 4. Handling Asynchronous Operation Status
+
 For operations that are processed asynchronously, use webhook notifications or poll for status updates:
-javascript// Option 1: Implement webhook handler
+
+```javascript
+// Option 1: Implement webhook handler
 function handleWebhook(req, res) {
   const signature = req.headers['fikisha-signature'];
   const payload = req.body;
@@ -200,46 +238,31 @@ async function processWebhookAsync(payload) {
     case 'transaction.failed':
       await handleFailedTransaction(data);
       break;
-    // Handle other event types
+    // Handle other event types...
+    default:
+      console.log(`Unhandled event type: ${eventType}`);
   }
 }
+```
 
-// Option 2: Poll for status
-async function checkTransactionStatus(transactionId, maxAttempts = 10) {
-  let attempts = 0;
+<Warning>
+  Always respond to webhook events with a `200 OK` status code as quickly as possible. Process the webhook payload asynchronously to prevent timeouts. If Fikisha doesn't receive a `200 OK` response within a reasonable timeframe (typically 10 seconds), the system may retry the delivery.
+</Warning>
 
-  while (attempts < maxAttempts) {
-    try {
-      const result = await makeApiRequest(
-        `/transactions/${transactionId}`,
-        {
-          method: 'GET',
-          headers: getAuthHeaders()
-        }
-      );
+## Next Steps
 
-      if (result.status === 'completed') {
-        return result; // Success!
-      } else if (result.status === 'failed') {
-        throw new Error(`Transaction failed: ${result.failureReason || 'Unknown reason'}`);
-      }
-
-      // Still processing, wait and retry
-      console.log(`Status: ${result.status}, attempt ${attempts + 1}/${maxAttempts}`);
-
-      // Increase delay between retries
-      const delayMs = Math.min(30000, 2000 * Math.pow(1.5, attempts));
-      await new Promise(resolve => setTimeout(resolve, delayMs));
-
-      attempts++;
-    } catch (error) {
-      // Handle API errors during polling
-      console.error(`Error checking status for request ${transactionId}:`, error);
-      throw error;
-    }
-  }
-
-  throw new Error(`Timeout waiting for transaction ${transactionId} to complete after ${maxAttempts} attempts`);
-}
-By implementing these error handling patterns in your integration, you'll create a more robust application that can gracefully handle API errors, automatically recover from transient failures, and provide meaningful feedback to your users.
+<CardGroup col={2}>
+  <Card title="Testing Guide" icon="flask" href="/guides/testing">
+    Learn how to test your integration and handle errors in a test environment.
+  </Card>
+  <Card title="Webhook Guide" icon="webhook" href="/api-reference/webhooks/configure-webhooks">
+    Set up webhooks to receive real-time notifications about your transactions.
+  </Card>
+  <Card title="API Overview" icon="book" href="/api-reference/overview">
+    Review the API overview for more information about endpoints and features.
+  </Card>
+  <Card title="Authentication" icon="key" href="/authentication">
+    Learn more about API authentication and security.
+  </Card>
+</CardGroup>
 ```

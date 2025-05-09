@@ -11,17 +11,24 @@ import {
   CodeGroup,
   Info,
   Warning,
+  Steps,
+  Card,
+  CardGroup
 } from "mintlify/components";
 
 # Create Campaign
 
 Creates a new marketing campaign to send messages or distribute services (airtime, data) to a group of recipients. Campaigns can be scheduled for immediate or future delivery and can target either contact groups or specific phone numbers.
 
+<Info>
+  Before creating a campaign, ensure you have sufficient wallet balance to cover the estimated cost of the campaign.
+</Info>
+
 ## Authentication
 
 This endpoint requires **API Key Authentication**. Include your `X-Vendor-ID` and `X-API-Key` in the HTTP request headers.
 
-````http
+```http
 POST /v1/campaigns HTTP/1.1
 Host: api.fikisha.app
 Content-Type: application/json
@@ -30,42 +37,70 @@ X-Vendor-ID: YOUR_VENDOR_ID_HERE
 X-API-Key: YOUR_SECRET_API_KEY_HERE
 
 { ... request body ... }
-See the Authentication Guide for details.
-Request Body
+```
+
+<Info>
+  See the [Authentication Guide](/authentication) for details on generating and using API keys.
+</Info>
+
+## Request Body
+
+### Basic Campaign Details
+
 <ParamField body="name" type="string" required>
-  Name of the campaign. Maximum length: 100 characters.
+  Name of the campaign. Used for identification and reporting.
+  - Maximum length: 100 characters
+  - Must be unique within your account
+  - Can contain letters, numbers, spaces, and basic punctuation
 </ParamField>
+
 <ParamField body="campaignType" type="string" required>
   Type of campaign. Allowed values:
   - `message` - SMS message campaign
   - `airtime` - Airtime distribution campaign
   - `data` - Data bundle distribution campaign
 </ParamField>
+
+### Campaign Content
+
 <ParamField body="content" type="object" required>
   Content details specific to the campaign type.
   <Expandable>
     <ParamField body="message" type="string">
-      *(Required for `message` campaign type)* The message text to send. Maximum length: 1600 characters.
+      *(Required for `message` campaign type)* The message text to send.
+      - Maximum length: 1600 characters
+      - Supports Unicode characters
+      - Messages longer than 160 characters will be sent as multiple SMS
     </ParamField>
-<ParamField body="amount" type="number">
-  *(Required for `airtime` and `data` campaign types)* The amount of airtime or the cost of the data bundle in KES.
-</ParamField>
 
-<ParamField body="provider" type="string">
-  *(Required for `airtime` and `data` campaign types)* The mobile network provider (e.g., `safaricom`, `airtel`, `telkom`).
-</ParamField>
+    <ParamField body="amount" type="number">
+      *(Required for `airtime` and `data` campaign types)* The amount in KES.
+      - For airtime: The amount to credit to each recipient
+      - For data: The cost of the data bundle
+    </ParamField>
 
-<ParamField body="bundleId" type="string">
-  *(Required for `data` campaign type)* The ID of the data bundle to distribute.
-</ParamField>
+    <ParamField body="provider" type="string">
+      *(Required for `airtime` and `data` campaign types)* The mobile network provider.
+      - `safaricom` - Safaricom
+      - `airtel` - Airtel Kenya
+      - `telkom` - Telkom Kenya
+    </ParamField>
 
-<ParamField body="saleType" type="string">
-  *(Optional for `airtime` campaign type)* The type of airtime to distribute. Allowed values:
-  - `direct_airtime` - Credit airtime directly to the phone number (default)
-  - `pin_airtime` - Generate airtime PIN codes
-</ParamField>
+    <ParamField body="bundleId" type="string">
+      *(Required for `data` campaign type)* The ID of the data bundle to distribute.
+      See the [Data Bundles Guide](/guides/data-bundles) for available bundles.
+    </ParamField>
+
+    <ParamField body="saleType" type="string">
+      *(Optional for `airtime` campaign type)* The type of airtime to distribute.
+      - `direct_airtime` - Credit airtime directly to the phone number (default)
+      - `pin_airtime` - Generate airtime PIN codes
+    </ParamField>
   </Expandable>
 </ParamField>
+
+### Targeting
+
 <ParamField body="targeting" type="object" required>
   Targeting details specifying the recipients.
   <Expandable>
@@ -74,173 +109,227 @@ Request Body
       - `group` - Target contacts in a contact group
       - `phoneNumbers` - Target specific phone numbers
     </ParamField>
-<ParamField body="groupId" type="string">
-  *(Required if method is `group`)* The ID of the contact group to target.
-</ParamField>
 
-<ParamField body="phoneNumbers" type="array">
-  *(Required if method is `phoneNumbers`)* Array of phone numbers to target.
+    <ParamField body="groupId" type="string">
+      *(Required if method is `group`)* The ID of the contact group to target.
+      The group must exist and contain at least one contact.
+    </ParamField>
 
-  <Expandable>
-    <ParamField body="[]" type="string">
-      A phone number including country code (e.g., `+254712345678`).
+    <ParamField body="phoneNumbers" type="array">
+      *(Required if method is `phoneNumbers`)* Array of phone numbers to target.
+      <Expandable>
+        <ParamField body="[]" type="string">
+          A phone number including country code (e.g., `+254712345678`).
+          - Must be in E.164 format
+          - Maximum 1000 numbers per campaign
+        </ParamField>
+      </Expandable>
+    </ParamField>
+
+    <ParamField body="estimatedCount" type="integer">
+      *(Optional)* Estimated number of recipients.
+      - If not provided, will be calculated from the group or phone numbers
+      - Used for cost estimation and validation
     </ParamField>
   </Expandable>
 </ParamField>
 
-<ParamField body="estimatedCount" type="integer">
-  *(Optional)* Estimated number of recipients. If not provided, will be calculated from the group or phone numbers.
-</ParamField>
-  </Expandable>
-</ParamField>
+### Scheduling
+
 <ParamField body="scheduling" type="object">
   *(Optional)* Scheduling details for the campaign.
   <Expandable>
     <ParamField body="scheduledTime" type="string">
-      *(Optional)* ISO 8601 timestamp for when the campaign should start. If not provided, the campaign will start immediately.
+      *(Optional)* ISO 8601 timestamp for when the campaign should start.
+      - If not provided, the campaign will start immediately
+      - Must be in the future
+      - Maximum 30 days in advance
     </ParamField>
-<ParamField body="timeZone" type="string">
-  *(Optional)* Time zone for the scheduled time. Default: `Africa/Nairobi`.
-</ParamField>
+
+    <ParamField body="timeZone" type="string">
+      *(Optional)* Time zone for the scheduled time.
+      - Default: `Africa/Nairobi`
+      - Must be a valid IANA time zone
+    </ParamField>
   </Expandable>
 </ParamField>
+
+### Additional Details
+
 <ParamField body="metadata" type="object">
   *(Optional)* Additional metadata for the campaign.
+  - Maximum 10 key-value pairs
+  - Keys must be strings
+  - Values can be strings, numbers, or booleans
 </ParamField>
-Example Request (Message Campaign)
-json{
-  "name": "New Year Promotion",
-  "campaignType": "message",
-  "content": {
-    "message": "Happy New Year! Get 20% off on all products using code NEW2024. Valid until January 15th."
-  },
-  "targeting": {
-    "method": "group",
-    "groupId": "grp_123456"
-  },
-  "scheduling": {
-    "scheduledTime": "2024-01-01T00:00:00Z",
-    "timeZone": "Africa/Nairobi"
-  },
-  "metadata": {
-    "department": "marketing",
-    "promotion": "new-year-2024"
-  }
-}
-Example Request (Airtime Campaign)
-json{
-  "name": "Customer Appreciation Airtime",
-  "campaignType": "airtime",
-  "content": {
-    "amount": 50,
-    "provider": "safaricom",
-    "saleType": "direct_airtime"
-  },
-  "targeting": {
-    "method": "phoneNumbers",
-    "phoneNumbers": [
-      "+254712345678",
-      "+254723456789",
-      "+254734567890"
-    ]
-  },
-  "scheduling": {
-    "scheduledTime": "2024-04-20T09:00:00Z"
-  },
-  "metadata": {
-    "initiative": "customer-appreciation-program"
-  }
-}
-Example Request (Data Bundle Campaign)
-json{
-  "name": "Weekly Data Bundle Rewards",
-  "campaignType": "data",
-  "content": {
-    "amount": 250,
-    "provider": "airtel",
-    "bundleId": "weekly_2gb"
-  },
-  "targeting": {
-    "method": "group",
-    "groupId": "grp_789012"
-  },
-  "metadata": {
-    "program": "loyalty-rewards"
-  }
-}
-Response (200 OK)
+
+## Example Requests
+
+<CodeGroup>
+  <CodeGroup.Tab title="Message Campaign">
+    ```json
+    {
+      "name": "New Year Promotion",
+      "campaignType": "message",
+      "content": {
+        "message": "Happy New Year! Get 20% off on all products using code NEW2024. Valid until January 15th."
+      },
+      "targeting": {
+        "method": "group",
+        "groupId": "grp_123456"
+      },
+      "scheduling": {
+        "scheduledTime": "2024-01-01T00:00:00Z",
+        "timeZone": "Africa/Nairobi"
+      },
+      "metadata": {
+        "department": "marketing",
+        "promotion": "new-year-2024"
+      }
+    }
+    ```
+  </CodeGroup.Tab>
+  <CodeGroup.Tab title="Airtime Campaign">
+    ```json
+    {
+      "name": "Customer Appreciation Airtime",
+      "campaignType": "airtime",
+      "content": {
+        "amount": 50,
+        "provider": "safaricom",
+        "saleType": "direct_airtime"
+      },
+      "targeting": {
+        "method": "phoneNumbers",
+        "phoneNumbers": [
+          "+254712345678",
+          "+254723456789",
+          "+254734567890"
+        ]
+      },
+      "scheduling": {
+        "scheduledTime": "2024-04-20T09:00:00Z"
+      },
+      "metadata": {
+        "initiative": "customer-appreciation-program"
+      }
+    }
+    ```
+  </CodeGroup.Tab>
+  <CodeGroup.Tab title="Data Bundle Campaign">
+    ```json
+    {
+      "name": "Weekly Data Bundle Rewards",
+      "campaignType": "data",
+      "content": {
+        "amount": 250,
+        "provider": "airtel",
+        "bundleId": "weekly_2gb"
+      },
+      "targeting": {
+        "method": "group",
+        "groupId": "grp_789012"
+      },
+      "metadata": {
+        "program": "loyalty-rewards"
+      }
+    }
+    ```
+  </CodeGroup.Tab>
+</CodeGroup>
+
+## Response
+
+### Success Response (201 Created)
+
 <ResponseField name="success" type="boolean" required>
   Indicates if the request was successful (`true`).
 </ResponseField>
+
 <ResponseField name="data" type="object" required>
   Contains the created campaign information.
   <Expandable>
     <ResponseField name="id" type="string" required>
       The unique identifier for the campaign.
     </ResponseField>
-<ResponseField name="name" type="string" required>
-  The name of the campaign.
-</ResponseField>
 
-<ResponseField name="campaignType" type="string" required>
-  The type of campaign.
-</ResponseField>
-
-<ResponseField name="status" type="string" required>
-  The current status of the campaign. Initial values:
-  - `scheduled` - For future-dated campaigns
-  - `pending` - For immediately executed campaigns
-</ResponseField>
-
-<ResponseField name="content" type="object" required>
-  Content details specific to the campaign type.
-</ResponseField>
-
-<ResponseField name="targeting" type="object" required>
-  Targeting details for the campaign.
-</ResponseField>
-
-<ResponseField name="recipientCount" type="integer" required>
-  The number of recipients targeted by the campaign.
-</ResponseField>
-
-<ResponseField name="scheduling" type="object">
-  *(Optional)* Scheduling details if provided.
-</ResponseField>
-
-<ResponseField name="cost" type="object">
-  Cost estimation for the campaign.
-
-  <Expandable>
-    <ResponseField name="estimatedTotal" type="number" required>
-      The estimated total cost of the campaign.
+    <ResponseField name="name" type="string" required>
+      Name of the campaign.
     </ResponseField>
 
-    <ResponseField name="perRecipient" type="number" required>
-      The cost per recipient.
+    <ResponseField name="campaignType" type="string" required>
+      Type of campaign (`message`, `airtime`, or `data`).
     </ResponseField>
 
-    <ResponseField name="currency" type="string" required>
-      The currency of the cost (e.g., `KES`).
+    <ResponseField name="status" type="string" required>
+      Current status of the campaign:
+      - `draft` - Campaign is created but not yet started
+      - `scheduled` - Campaign is scheduled for future delivery
+      - `running` - Campaign is currently running
+      - `completed` - Campaign has finished successfully
+      - `failed` - Campaign has failed
+      - `cancelled` - Campaign was cancelled
+    </ResponseField>
+
+    <ResponseField name="content" type="object" required>
+      Content details specific to the campaign type.
+    </ResponseField>
+
+    <ResponseField name="targeting" type="object" required>
+      Targeting details specifying the recipients.
+    </ResponseField>
+
+    <ResponseField name="scheduling" type="object">
+      *(Optional)* Scheduling details for the campaign.
+    </ResponseField>
+
+    <ResponseField name="metadata" type="object">
+      *(Optional)* Additional metadata for the campaign.
+    </ResponseField>
+
+    <ResponseField name="stats" type="object" required>
+      Campaign statistics.
+      <Expandable>
+        <ResponseField name="totalRecipients" type="integer" required>
+          Total number of recipients targeted.
+        </ResponseField>
+        <ResponseField name="estimatedCost" type="number" required>
+          Estimated total cost in KES.
+        </ResponseField>
+        <ResponseField name="delivered" type="integer" required>
+          Number of successful deliveries.
+        </ResponseField>
+        <ResponseField name="failed" type="integer" required>
+          Number of failed deliveries.
+        </ResponseField>
+        <ResponseField name="pending" type="integer" required>
+          Number of pending deliveries.
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+
+    <ResponseField name="createdAt" type="string" required>
+      ISO 8601 timestamp of when the campaign was created.
+    </ResponseField>
+
+    <ResponseField name="updatedAt" type="string" required>
+      ISO 8601 timestamp of when the campaign was last updated.
+    </ResponseField>
+
+    <ResponseField name="startedAt" type="string">
+      *(Optional)* ISO 8601 timestamp of when the campaign started.
+    </ResponseField>
+
+    <ResponseField name="completedAt" type="string">
+      *(Optional)* ISO 8601 timestamp of when the campaign completed.
     </ResponseField>
   </Expandable>
 </ResponseField>
 
-<ResponseField name="createdAt" type="string" required>
-  ISO 8601 timestamp of when the campaign was created.
-</ResponseField>
+### Example Response
 
-<ResponseField name="scheduledAt" type="string">
-  *(Optional)* ISO 8601 timestamp of when the campaign is scheduled to start.
-</ResponseField>
-
-<ResponseField name="metadata" type="object">
-  *(Optional)* Additional metadata for the campaign.
-</ResponseField>
-  </Expandable>
-</ResponseField>
-Example Response (Message Campaign)
-json{
+```json
+{
   "success": true,
   "data": {
     "id": "camp_123456",
@@ -252,148 +341,204 @@ json{
     },
     "targeting": {
       "method": "group",
-      "groupId": "grp_123456"
+      "groupId": "grp_123456",
+      "estimatedCount": 1000
     },
-    "recipientCount": 125,
     "scheduling": {
       "scheduledTime": "2024-01-01T00:00:00Z",
       "timeZone": "Africa/Nairobi"
     },
-    "cost": {
-      "estimatedTotal": 125.00,
-      "perRecipient": 1.00,
-      "currency": "KES"
-    },
-    "createdAt": "2023-12-20T15:30:00Z",
-    "scheduledAt": "2024-01-01T00:00:00Z",
     "metadata": {
       "department": "marketing",
       "promotion": "new-year-2024"
-    }
+    },
+    "stats": {
+      "totalRecipients": 1000,
+      "estimatedCost": 2000,
+      "delivered": 0,
+      "failed": 0,
+      "pending": 1000
+    },
+    "createdAt": "2023-12-31T12:00:00Z",
+    "updatedAt": "2023-12-31T12:00:00Z",
+    "startedAt": null,
+    "completedAt": null
   }
 }
-Possible Errors
-HTTP CodeError TypeDescription400Invalid RequestMissing required fields or invalid values.401Authentication RequiredMissing or invalid X-Vendor-ID or X-API-Key.402Insufficient FundsWallet balance too low for the estimated campaign cost.403ForbiddenThe contact group ID does not belong to your vendor account.404Not FoundContact group ID not found or bundleId not found.429Too Many RequestsRate limit exceeded.500Internal Server ErrorServer-side error while creating the campaign.
-See the Error Handling Guide for details.
-Example (cURL)
-bash# Replace YOUR_VENDOR_ID and YOUR_API_KEY
-curl -X POST https://api.fikisha.app/v1/campaigns \
-  -H "Content-Type: application/json" \
-  -H "Accept: application/json" \
-  -H "X-Vendor-ID: YOUR_VENDOR_ID" \
-  -H "X-API-Key: YOUR_API_KEY" \
-  -d '{
-    "name": "Flash Sale Announcement",
-    "campaignType": "message",
-    "content": {
-      "message": "Flash Sale today! 30% off all items from 2PM to 6PM. Visit our store or shop online."
-    },
-    "targeting": {
-      "method": "group",
-      "groupId": "grp_123456"
-    }
-  }'
+```
+
+## Example Requests
+
 <CodeGroup>
-  <div>
+  <CodeGroup.Tab title="cURL">
+    ```bash
+    # Replace YOUR_VENDOR_ID and YOUR_API_KEY
+    curl -X POST "https://api.fikisha.app/v1/campaigns" \
+      -H "Content-Type: application/json" \
+      -H "Accept: application/json" \
+      -H "X-Vendor-ID: YOUR_VENDOR_ID" \
+      -H "X-API-Key: YOUR_API_KEY" \
+      -d '{
+        "name": "New Year Promotion",
+        "campaignType": "message",
+        "content": {
+          "message": "Happy New Year! Get 20% off on all products using code NEW2024. Valid until January 15th."
+        },
+        "targeting": {
+          "method": "group",
+          "groupId": "grp_123456"
+        },
+        "scheduling": {
+          "scheduledTime": "2024-01-01T00:00:00Z",
+          "timeZone": "Africa/Nairobi"
+        },
+        "metadata": {
+          "department": "marketing",
+          "promotion": "new-year-2024"
+        }
+      }'
+    ```
+  </CodeGroup.Tab>
+  <CodeGroup.Tab title="JavaScript">
     ```javascript
     const axios = require('axios');
-async function createCampaign(campaignData) {
-  const url = 'https://api.fikisha.app/v1/campaigns';
-  const headers = {
-    'Content-Type': 'application/json',
-    'Accept': 'application/json',
-    'X-Vendor-ID': 'YOUR_VENDOR_ID', // Replace with your Vendor ID
-    'X-API-Key': 'YOUR_API_KEY'   // Replace with your API Key
-  };
 
-  try {
-    const response = await axios.post(url, campaignData, { headers });
-    console.log('Campaign Created:', response.data.data.id);
-    console.log('Status:', response.data.data.status);
-    console.log('Recipients:', response.data.data.recipientCount);
-    console.log('Estimated Cost:', response.data.data.cost.estimatedTotal, response.data.data.cost.currency);
-    return response.data.data;
-  } catch (error) {
-    console.error('API Error:', error.response ? error.response.data : error.message);
-    throw error;
-  }
-}
-
-// Example Usage: Airtime Campaign
-const campaignData = {
-  name: "Customer Appreciation Airtime",
-  campaignType: "airtime",
-  content: {
-    amount: 50,
-    provider: "safaricom",
-    saleType: "direct_airtime"
-  },
-  targeting: {
-    method: "phoneNumbers",
-    phoneNumbers: [
-      "+254712345678",
-      "+254723456789",
-      "+254734567890"
-    ]
-  }
-};
-
-createCampaign(campaignData);
-````
-
-  </div>
-  <div>
-    ```python
-    import requests
-    import json
-def create_campaign(campaign_data):
-    url = 'https://api.fikisha.app/v1/campaigns'
-    headers = {
+    async function createCampaign(campaignData) {
+      const url = 'https://api.fikisha.app/v1/campaigns';
+      const headers = {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
-        'X-Vendor-ID': 'YOUR_VENDOR_ID', # Replace with your Vendor ID
-        'X-API-Key': 'YOUR_API_KEY'   # Replace with your API Key
+        'X-Vendor-ID': 'YOUR_VENDOR_ID', // Replace with your Vendor ID
+        'X-API-Key': 'YOUR_API_KEY'   // Replace with your API Key
+      };
+
+      try {
+        const response = await axios.post(url, campaignData, { headers });
+        const campaign = response.data.data;
+        console.log(`Campaign created with ID: ${campaign.id}`);
+        console.log(`Status: ${campaign.status}`);
+        console.log(`Total Recipients: ${campaign.stats.totalRecipients}`);
+        console.log(`Estimated Cost: ${campaign.stats.estimatedCost} KES`);
+        return campaign;
+      } catch (error) {
+        console.error('API Error:', error.response ? error.response.data : error.message);
+        throw error;
+      }
     }
 
-    try:
-        response = requests.post(url, headers=headers, json=campaign_data)
-        response.raise_for_status()  # Raise exception for HTTP errors
-        result = response.json()
-        print(f"Campaign Created: {result['data']['id']}")
-        print(f"Status: {result['data']['status']}")
-        print(f"Recipients: {result['data']['recipientCount']}")
-        print(f"Estimated Cost: {result['data']['cost']['estimatedTotal']} {result['data']['cost']['currency']}")
-        return result['data']
-    except requests.exceptions.RequestException as e:
-        print(f'API Error: {e}')
-        if hasattr(e, 'response') and e.response is not None:
-            print(f'Status Code: {e.response.status_code}')
-            print(f'Response Text: {e.response.text}')
-        raise e
+    // Example: Create a message campaign
+    const campaignData = {
+      name: "New Year Promotion",
+      campaignType: "message",
+      content: {
+        message: "Happy New Year! Get 20% off on all products using code NEW2024. Valid until January 15th."
+      },
+      targeting: {
+        method: "group",
+        groupId: "grp_123456"
+      },
+      scheduling: {
+        scheduledTime: "2024-01-01T00:00:00Z",
+        timeZone: "Africa/Nairobi"
+      },
+      metadata: {
+        department: "marketing",
+        promotion: "new-year-2024"
+      }
+    };
 
-# Example Usage: Message Campaign
+    createCampaign(campaignData).then(campaign => {
+      console.log(`Campaign will start at: ${campaign.scheduling.scheduledTime}`);
+    });
+    ```
+  </CodeGroup.Tab>
+  <CodeGroup.Tab title="Python">
+    ```python
+    import requests
 
-campaign_data = {
-"name": "Flash Sale Announcement",
-"campaignType": "message",
-"content": {
-"message": "Flash Sale today! 30% off all items from 2PM to 6PM. Visit our store or shop online."
-},
-"targeting": {
-"method": "group",
-"groupId": "grp_123456"
-}
-}
+    def create_campaign(campaign_data):
+        url = 'https://api.fikisha.app/v1/campaigns'
+        headers = {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'X-Vendor-ID': 'YOUR_VENDOR_ID', # Replace with your Vendor ID
+            'X-API-Key': 'YOUR_API_KEY'   # Replace with your API Key
+        }
 
-create_campaign(campaign_data)
+        try:
+            response = requests.post(url, json=campaign_data, headers=headers)
+            response.raise_for_status()
+            campaign = response.json()['data']
+            print(f"Campaign created with ID: {campaign['id']}")
+            print(f"Status: {campaign['status']}")
+            print(f"Total Recipients: {campaign['stats']['totalRecipients']}")
+            print(f"Estimated Cost: {campaign['stats']['estimatedCost']} KES")
+            return campaign
+        except requests.exceptions.RequestException as e:
+            print(f'API Error: {e}')
+            if hasattr(e, 'response') and e.response is not None:
+                print(f'Status Code: {e.response.status_code}')
+                print(f'Response Text: {e.response.text}')
+            raise e
 
-```
-  </div>
+    # Example: Create a message campaign
+    campaign_data = {
+        "name": "New Year Promotion",
+        "campaignType": "message",
+        "content": {
+            "message": "Happy New Year! Get 20% off on all products using code NEW2024. Valid until January 15th."
+        },
+        "targeting": {
+            "method": "group",
+            "groupId": "grp_123456"
+        },
+        "scheduling": {
+            "scheduledTime": "2024-01-01T00:00:00Z",
+            "timeZone": "Africa/Nairobi"
+        },
+        "metadata": {
+            "department": "marketing",
+            "promotion": "new-year-2024"
+        }
+    }
+
+    campaign = create_campaign(campaign_data)
+    print(f"Campaign will start at: {campaign['scheduling']['scheduledTime']}")
+    ```
+  </CodeGroup.Tab>
 </CodeGroup>
-<Warning>
-  For campaigns targeting large groups (1,000+ recipients), consider scheduling them during off-peak hours to optimize delivery speed.
-</Warning>
+
+## Error Responses
+
+| HTTP Code | Error Type | Description |
+|-----------|------------|-------------|
+| 400 | Invalid Request | Missing required fields or invalid values |
+| 401 | Authentication Required | Missing or invalid X-Vendor-ID or X-API-Key |
+| 402 | Payment Required | Insufficient wallet balance for campaign |
+| 403 | Forbidden | Insufficient permissions to create campaigns |
+| 404 | Not Found | Referenced contact group not found |
+| 422 | Validation Error | Invalid phone numbers or campaign parameters |
+| 429 | Too Many Requests | Rate limit exceeded |
+| 500 | Internal Server Error | Server-side error while creating campaign |
+
 <Info>
-  After creating a campaign, you can monitor its progress using the [Get Campaign Status](/api-reference/campaigns/get-campaign) endpoint or by configuring webhooks to receive real-time status updates.
+  See the [Error Handling Guide](/guides/error-handling) for details on handling these errors.
 </Info>
+
+## Next Steps
+
+<CardGroup col={2}>
+  <Card title="Get Campaign" icon="info" href="/api-reference/campaigns/get-campaign">
+    Check the status of a specific campaign.
+  </Card>
+  <Card title="List Campaigns" icon="list" href="/api-reference/campaigns/list-campaigns">
+    View all your campaigns.
+  </Card>
+  <Card title="Error Handling" icon="bug" href="/guides/error-handling">
+    Learn about error responses and handling.
+  </Card>
+  <Card title="Testing" icon="flask" href="/guides/testing">
+    Learn how to test your campaign integration.
+  </Card>
+</CardGroup>
 ```

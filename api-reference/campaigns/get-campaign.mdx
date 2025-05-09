@@ -5,10 +5,15 @@ description: 'Retrieve detailed information and current status of a specific cam
 ---
 
 import {
+  ParamField,
   ResponseField,
   Expandable,
   CodeGroup,
   Info,
+  Warning,
+  Steps,
+  Card,
+  CardGroup
 } from "mintlify/components";
 
 # Get Campaign Status
@@ -19,238 +24,259 @@ Retrieves detailed information about a specific campaign, including its current 
 
 This endpoint requires **API Key Authentication**. Include your `X-Vendor-ID` and `X-API-Key` in the HTTP request headers.
 
-````http
+```http
 GET /v1/campaigns/camp_123456 HTTP/1.1
 Host: api.fikisha.app
 X-Vendor-ID: YOUR_VENDOR_ID_HERE
 X-API-Key: YOUR_SECRET_API_KEY_HERE
 Accept: application/json
-See the Authentication Guide for details.
-Path Parameters
-ParameterDescriptioncampaignIdThe unique identifier (camp_...) of the campaign to retrieve.
-Response (200 OK)
+```
+
+<Info>
+  See the [Authentication Guide](/authentication) for details on generating and using API keys.
+</Info>
+
+## Path Parameters
+
+<ParamField path="campaignId" type="string" required>
+  The unique identifier of the campaign to retrieve (e.g., `camp_123456`).
+</ParamField>
+
+## Response
+
+### Success Response (200 OK)
+
 <ResponseField name="success" type="boolean" required>
   Indicates if the request was successful (`true`).
 </ResponseField>
+
 <ResponseField name="data" type="object" required>
   Contains detailed information about the campaign.
   <Expandable>
     <ResponseField name="id" type="string" required>
       The unique identifier for the campaign.
     </ResponseField>
-<ResponseField name="name" type="string" required>
-  The name of the campaign.
-</ResponseField>
 
-<ResponseField name="campaignType" type="string" required>
-  The type of campaign (e.g., `message`, `airtime`, `data`).
-</ResponseField>
-
-<ResponseField name="status" type="string" required>
-  The current status of the campaign. Possible values:
-  - `pending` - Campaign is being initiated
-  - `scheduled` - Campaign is scheduled for future execution
-  - `running` - Campaign is currently executing
-  - `completed` - Campaign has completed successfully
-  - `failed` - Campaign has failed
-  - `cancelled` - Campaign was cancelled
-</ResponseField>
-
-<ResponseField name="content" type="object" required>
-  Content details specific to the campaign type.
-
-  <Expandable>
-    <ResponseField name="message" type="string">
-      *(For message campaigns)* The message text.
+    <ResponseField name="name" type="string" required>
+      Name of the campaign.
     </ResponseField>
 
-    <ResponseField name="amount" type="number">
-      *(For airtime/data campaigns)* The amount or cost in KES.
+    <ResponseField name="campaignType" type="string" required>
+      Type of campaign (`message`, `airtime`, or `data`).
     </ResponseField>
 
-    <ResponseField name="provider" type="string">
-      *(For airtime/data campaigns)* The mobile network provider.
+    <ResponseField name="status" type="string" required>
+      Current status of the campaign:
+      - `draft` - Campaign is created but not yet started
+      - `scheduled` - Campaign is scheduled for future delivery
+      - `running` - Campaign is currently executing
+      - `completed` - Campaign has completed successfully
+      - `failed` - Campaign has failed
+      - `cancelled` - Campaign was cancelled
     </ResponseField>
 
-    <ResponseField name="saleType" type="string">
-      *(For airtime campaigns)* The type of airtime distribution.
-    </ResponseField>
-
-    <ResponseField name="bundleId" type="string">
-      *(For data campaigns)* The ID of the data bundle.
-    </ResponseField>
-  </Expandable>
-</ResponseField>
-
-<ResponseField name="targeting" type="object" required>
-  Targeting details for the campaign.
-
-  <Expandable>
-    <ResponseField name="method" type="string" required>
-      The targeting method used (`group` or `phoneNumbers`).
-    </ResponseField>
-
-    <ResponseField name="groupId" type="string">
-      *(If method is `group`)* The ID of the targeted contact group.
-    </ResponseField>
-
-    <ResponseField name="phoneNumbers" type="array">
-      *(If method is `phoneNumbers`)* Array of targeted phone numbers.
-    </ResponseField>
-  </Expandable>
-</ResponseField>
-
-<ResponseField name="recipientCount" type="integer" required>
-  The total number of recipients targeted by the campaign.
-</ResponseField>
-
-<ResponseField name="progress" type="object" required>
-  Detailed progress information for the campaign.
-
-  <Expandable>
-    <ResponseField name="processed" type="integer" required>
-      Number of recipients processed so far.
-    </ResponseField>
-
-    <ResponseField name="successful" type="integer" required>
-      Number of successful deliveries.
-    </ResponseField>
-
-    <ResponseField name="failed" type="integer" required>
-      Number of failed deliveries.
-    </ResponseField>
-
-    <ResponseField name="pending" type="integer" required>
-      Number of pending deliveries.
-    </ResponseField>
-
-    <ResponseField name="percentComplete" type="number" required>
-      Percentage of completion (0-100).
-    </ResponseField>
-  </Expandable>
-</ResponseField>
-
-<ResponseField name="statistics" type="object" required>
-  Detailed delivery statistics for the campaign.
-
-  <Expandable>
-    <ResponseField name="deliveryRate" type="number" required>
-      Percentage of successful deliveries out of processed recipients.
-    </ResponseField>
-
-    <ResponseField name="processingRate" type="number" required>
-      Average number of recipients processed per minute.
-    </ResponseField>
-
-    <ResponseField name="failureReasons" type="object">
-      *(Optional)* Breakdown of failure reasons (if any failures occurred).
-
+    <ResponseField name="content" type="object" required>
+      Content details specific to the campaign type.
       <Expandable>
-        <ResponseField name="{reason}" type="integer">
-          Number of failures for each reason category.
+        <ResponseField name="message" type="string">
+          *(For message campaigns)* The message text.
+        </ResponseField>
+
+        <ResponseField name="amount" type="number">
+          *(For airtime/data campaigns)* The amount or cost in KES.
+        </ResponseField>
+
+        <ResponseField name="provider" type="string">
+          *(For airtime/data campaigns)* The mobile network provider code (e.g., `safaricom`, `airtel`, `telkom`).
+        </ResponseField>
+
+        <ResponseField name="saleType" type="string">
+          *(For airtime campaigns)* The type of airtime distribution:
+          - `direct_airtime` - Direct airtime load
+          - `pin_airtime` - Airtime PIN generation
+        </ResponseField>
+
+        <ResponseField name="bundleId" type="string">
+          *(For data campaigns)* The ID of the data bundle.
         </ResponseField>
       </Expandable>
     </ResponseField>
+
+    <ResponseField name="targeting" type="object" required>
+      Targeting details for the campaign.
+      <Expandable>
+        <ResponseField name="method" type="string" required>
+          The targeting method used (`group` or `phoneNumbers`).
+        </ResponseField>
+
+        <ResponseField name="groupId" type="string">
+          *(If method is `group`)* The ID of the targeted contact group.
+        </ResponseField>
+
+        <ResponseField name="phoneNumbers" type="array">
+          *(If method is `phoneNumbers`)* Array of targeted phone numbers.
+          <Expandable>
+            <ResponseField name="[]" type="string">
+              Phone number in E.164 format (e.g., `+254712345678`).
+            </ResponseField>
+          </Expandable>
+        </ResponseField>
+
+        <ResponseField name="estimatedCount" type="integer">
+          *(Optional)* Estimated number of recipients.
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+
+    <ResponseField name="progress" type="object" required>
+      Detailed progress information for the campaign.
+      <Expandable>
+        <ResponseField name="processed" type="integer" required>
+          Number of recipients processed so far.
+        </ResponseField>
+
+        <ResponseField name="successful" type="integer" required>
+          Number of successful deliveries.
+        </ResponseField>
+
+        <ResponseField name="failed" type="integer" required>
+          Number of failed deliveries.
+        </ResponseField>
+
+        <ResponseField name="pending" type="integer" required>
+          Number of pending deliveries.
+        </ResponseField>
+
+        <ResponseField name="percentComplete" type="number" required>
+          Percentage of completion (0-100).
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+
+    <ResponseField name="statistics" type="object" required>
+      Detailed delivery statistics for the campaign.
+      <Expandable>
+        <ResponseField name="deliveryRate" type="number" required>
+          Percentage of successful deliveries out of processed recipients.
+        </ResponseField>
+
+        <ResponseField name="processingRate" type="number" required>
+          Average number of recipients processed per minute.
+        </ResponseField>
+
+        <ResponseField name="failureReasons" type="object">
+          *(Optional)* Breakdown of failure reasons (if any failures occurred).
+          <Expandable>
+            <ResponseField name="{reason}" type="integer">
+              Number of failures for each reason category.
+            </ResponseField>
+          </Expandable>
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+
+    <ResponseField name="cost" type="object" required>
+      Detailed cost information for the campaign.
+      <Expandable>
+        <ResponseField name="estimatedTotal" type="number" required>
+          The estimated total cost of the campaign in KES.
+        </ResponseField>
+
+        <ResponseField name="actualTotal" type="number">
+          *(Optional)* The actual total cost incurred so far in KES.
+        </ResponseField>
+
+        <ResponseField name="perRecipient" type="number" required>
+          The cost per recipient in KES.
+        </ResponseField>
+
+        <ResponseField name="currency" type="string" required>
+          The currency of the cost (always `KES`).
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+
+    <ResponseField name="timing" type="object" required>
+      Timing information for the campaign.
+      <Expandable>
+        <ResponseField name="createdAt" type="string" required>
+          ISO 8601 timestamp of when the campaign was created.
+        </ResponseField>
+
+        <ResponseField name="scheduledAt" type="string">
+          *(Optional)* ISO 8601 timestamp of when the campaign was/is scheduled to start.
+        </ResponseField>
+
+        <ResponseField name="startedAt" type="string">
+          *(Optional)* ISO 8601 timestamp of when the campaign actually started.
+        </ResponseField>
+
+        <ResponseField name="completedAt" type="string">
+          *(Optional)* ISO 8601 timestamp of when the campaign completed.
+        </ResponseField>
+
+        <ResponseField name="estimatedTimeRemaining" type="string">
+          *(Optional)* Estimated time remaining for running campaigns (e.g., "00:05:30" for 5 minutes and 30 seconds).
+        </ResponseField>
+
+        <ResponseField name="processingDuration" type="string">
+          *(Optional)* Total processing duration for completed campaigns (e.g., "00:15:45" for 15 minutes and 45 seconds).
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+
+    <ResponseField name="metadata" type="object">
+      *(Optional)* Additional metadata for the campaign.
+    </ResponseField>
   </Expandable>
 </ResponseField>
 
-<ResponseField name="cost" type="object" required>
-  Detailed cost information for the campaign.
+### Example Response
 
-  <Expandable>
-    <ResponseField name="estimatedTotal" type="number" required>
-      The estimated total cost of the campaign.
-    </ResponseField>
-
-    <ResponseField name="actualTotal" type="number">
-      *(Optional)* The actual total cost incurred so far.
-    </ResponseField>
-
-    <ResponseField name="perRecipient" type="number" required>
-      The cost per recipient.
-    </ResponseField>
-
-    <ResponseField name="currency" type="string" required>
-      The currency of the cost (e.g., `KES`).
-    </ResponseField>
-  </Expandable>
-</ResponseField>
-
-<ResponseField name="timing" type="object" required>
-  Timing information for the campaign.
-
-  <Expandable>
-    <ResponseField name="createdAt" type="string" required>
-      ISO 8601 timestamp of when the campaign was created.
-    </ResponseField>
-
-    <ResponseField name="scheduledAt" type="string">
-      *(Optional)* ISO 8601 timestamp of when the campaign was/is scheduled to start.
-    </ResponseField>
-
-    <ResponseField name="startedAt" type="string">
-      *(Optional)* ISO 8601 timestamp of when the campaign actually started.
-    </ResponseField>
-
-    <ResponseField name="completedAt" type="string">
-      *(Optional)* ISO 8601 timestamp of when the campaign completed.
-    </ResponseField>
-
-    <ResponseField name="estimatedTimeRemaining" type="string">
-      *(Optional)* Estimated time remaining for running campaigns (e.g., "00:05:30" for 5 minutes and 30 seconds).
-    </ResponseField>
-  </Expandable>
-</ResponseField>
-
-<ResponseField name="metadata" type="object">
-  *(Optional)* Additional metadata for the campaign.
-</ResponseField>
-  </Expandable>
-</ResponseField>
-Example Response (Completed Message Campaign)
-json{
+```json
+{
   "success": true,
   "data": {
     "id": "camp_123456",
     "name": "New Year Promotion",
     "campaignType": "message",
-    "status": "completed",
+    "status": "running",
     "content": {
       "message": "Happy New Year! Get 20% off on all products using code NEW2024. Valid until January 15th."
     },
     "targeting": {
       "method": "group",
-      "groupId": "grp_123456"
+      "groupId": "grp_123456",
+      "estimatedCount": 1000
     },
-    "recipientCount": 125,
     "progress": {
-      "processed": 125,
-      "successful": 118,
-      "failed": 7,
-      "pending": 0,
-      "percentComplete": 100
+      "processed": 750,
+      "successful": 720,
+      "failed": 30,
+      "pending": 250,
+      "percentComplete": 75.0
     },
     "statistics": {
-      "deliveryRate": 94.4,
-      "processingRate": 45.5,
+      "deliveryRate": 96.0,
+      "processingRate": 150,
       "failureReasons": {
-        "invalid_number": 3,
-        "network_error": 2,
-        "recipient_opted_out": 2
+        "invalid_number": 15,
+        "network_error": 10,
+        "other": 5
       }
     },
     "cost": {
-      "estimatedTotal": 125.00,
-      "actualTotal": 118.00,
-      "perRecipient": 1.00,
+      "estimatedTotal": 2000,
+      "actualTotal": 1500,
+      "perRecipient": 2,
       "currency": "KES"
     },
     "timing": {
-      "createdAt": "2023-12-20T15:30:00Z",
+      "createdAt": "2024-01-01T00:00:00Z",
       "scheduledAt": "2024-01-01T00:00:00Z",
-      "startedAt": "2024-01-01T00:00:05Z",
-      "completedAt": "2024-01-01T00:02:45Z",
-      "estimatedTimeRemaining": null
+      "startedAt": "2024-01-01T00:00:00Z",
+      "estimatedTimeRemaining": "00:05:30",
+      "processingDuration": "00:15:45"
     },
     "metadata": {
       "department": "marketing",
@@ -258,131 +284,125 @@ json{
     }
   }
 }
-Example Response (Running Airtime Campaign)
-json{
-  "success": true,
-  "data": {
-    "id": "camp_123457",
-    "name": "Customer Appreciation Airtime",
-    "campaignType": "airtime",
-    "status": "running",
-    "content": {
-      "amount": 50,
-      "provider": "safaricom",
-      "saleType": "direct_airtime"
-    },
-    "targeting": {
-      "method": "group",
-      "groupId": "grp_789012"
-    },
-    "recipientCount": 500,
-    "progress": {
-      "processed": 325,
-      "successful": 320,
-      "failed": 5,
-      "pending": 175,
-      "percentComplete": 65
-    },
-    "statistics": {
-      "deliveryRate": 98.5,
-      "processingRate": 22.3,
-      "failureReasons": {
-        "invalid_number": 3,
-        "network_error": 2
-      }
-    },
-    "cost": {
-      "estimatedTotal": 25000.00,
-      "actualTotal": 16000.00,
-      "perRecipient": 50.00,
-      "currency": "KES"
-    },
-    "timing": {
-      "createdAt": "2024-04-19T10:00:00Z",
-      "scheduledAt": "2024-04-20T09:00:00Z",
-      "startedAt": "2024-04-20T09:00:15Z",
-      "completedAt": null,
-      "estimatedTimeRemaining": "00:07:50"
-    },
-    "metadata": {
-      "program": "customer-appreciation"
-    }
-  }
-}
-Possible Errors
-HTTP CodeError TypeDescription400Invalid RequestInvalid campaignId format.401Authentication RequiredMissing or invalid X-Vendor-ID or X-API-Key.403ForbiddenThe campaign ID does not belong to your vendor account.404Not FoundCampaign ID not found.500Internal Server ErrorServer-side error while retrieving campaign details.
-See the Error Handling Guide for details.
-Example (GET Request via cURL)
+```
+
+## Example Requests
+
 <CodeGroup>
-  <div>
+  <CodeGroup.Tab title="cURL">
     ```bash
     # Replace YOUR_VENDOR_ID, YOUR_API_KEY, and CAMPAIGN_ID
-    curl -X GET "https://api.fikisha.app/v1/campaigns/camp_123456" \
-    -H "Accept: application/json" \
-    -H "X-Vendor-ID: YOUR_VENDOR_ID" \
-    -H "X-API-Key: YOUR_API_KEY"
+    curl -X GET "https://api.fikisha.app/v1/campaigns/CAMPAIGN_ID" \
+      -H "Accept: application/json" \
+      -H "X-Vendor-ID: YOUR_VENDOR_ID" \
+      -H "X-API-Key: YOUR_API_KEY"
     ```
-  </div>
-  <div>
+  </CodeGroup.Tab>
+  <CodeGroup.Tab title="JavaScript">
     ```javascript
     const axios = require('axios');
-async function getCampaignStatus(campaignId) {
-  const url = `https://api.fikisha.app/v1/campaigns/${campaignId}`;
-  const headers = {
-    'Accept': 'application/json',
-    'X-Vendor-ID': 'YOUR_VENDOR_ID', // Replace with your Vendor ID
-    'X-API-Key': 'YOUR_API_KEY'   // Replace with your API Key
-  };
 
-  try {
-    const response = await axios.get(url, { headers });
-    console.log('Campaign Status:', response.data.data.status);
-    console.log('Progress:', `${response.data.data.progress.percentComplete}% complete`);
-    return response.data.data;
-  } catch (error) {
-    console.error('API Error:', error.response ? error.response.data : error.message);
-    throw error;
-  }
-}
-
-// Example Usage:
-getCampaignStatus('camp_123456');
-````
-
-  </div>
-  <div>
-    ```python
-    import requests
-def get_campaign_status(campaign_id):
-    url = f'https://api.fikisha.app/v1/campaigns/{campaign_id}'
-    headers = {
+    async function getCampaignStatus(campaignId) {
+      const url = `https://api.fikisha.app/v1/campaigns/${campaignId}`;
+      const headers = {
         'Accept': 'application/json',
-        'X-Vendor-ID': 'YOUR_VENDOR_ID', # Replace with your Vendor ID
-        'X-API-Key': 'YOUR_API_KEY'   # Replace with your API Key
+        'X-Vendor-ID': 'YOUR_VENDOR_ID', // Replace with your Vendor ID
+        'X-API-Key': 'YOUR_API_KEY'   // Replace with your API Key
+      };
+
+      try {
+        const response = await axios.get(url, { headers });
+        const campaign = response.data.data;
+        console.log(`Campaign Status: ${campaign.status}`);
+        console.log(`Progress: ${campaign.progress.percentComplete}%`);
+        console.log(`Successful: ${campaign.progress.successful}`);
+        console.log(`Failed: ${campaign.progress.failed}`);
+        console.log(`Pending: ${campaign.progress.pending}`);
+        if (campaign.timing.estimatedTimeRemaining) {
+          console.log(`Time Remaining: ${campaign.timing.estimatedTimeRemaining}`);
+        }
+        return campaign;
+      } catch (error) {
+        console.error('API Error:', error.response ? error.response.data : error.message);
+        throw error;
+      }
     }
 
-    try:
-        response = requests.get(url, headers=headers)
-        response.raise_for_status()  # Raise exception for HTTP errors
-        data = response.json()
-        print(f"Campaign Status: {data['data']['status']}")
-        print(f"Progress: {data['data']['progress']['percentComplete']}% complete")
-        return data['data']
-    except requests.exceptions.RequestException as e:
-        print(f'API Error: {e}')
-        if hasattr(e, 'response') and e.response is not None:
-            print(f'Status Code: {e.response.status_code}')
-            print(f'Response Text: {e.response.text}')
-        raise e
+    // Example: Check status of a campaign
+    getCampaignStatus('camp_123456').then(campaign => {
+      console.log(`Delivery Rate: ${campaign.statistics.deliveryRate}%`);
+      console.log(`Cost: ${campaign.cost.actualTotal} KES`);
+    });
+    ```
+  </CodeGroup.Tab>
+  <CodeGroup.Tab title="Python">
+    ```python
+    import requests
 
-# Example Usage:
+    def get_campaign_status(campaign_id):
+        url = f'https://api.fikisha.app/v1/campaigns/{campaign_id}'
+        headers = {
+            'Accept': 'application/json',
+            'X-Vendor-ID': 'YOUR_VENDOR_ID', # Replace with your Vendor ID
+            'X-API-Key': 'YOUR_API_KEY'   # Replace with your API Key
+        }
 
-get_campaign_status('camp_123456')
+        try:
+            response = requests.get(url, headers=headers)
+            response.raise_for_status()
+            campaign = response.json()['data']
+            print(f"Campaign Status: {campaign['status']}")
+            print(f"Progress: {campaign['progress']['percentComplete']}%")
+            print(f"Successful: {campaign['progress']['successful']}")
+            print(f"Failed: {campaign['progress']['failed']}")
+            print(f"Pending: {campaign['progress']['pending']}")
+            if 'estimatedTimeRemaining' in campaign['timing']:
+                print(f"Time Remaining: {campaign['timing']['estimatedTimeRemaining']}")
+            return campaign
+        except requests.exceptions.RequestException as e:
+            print(f'API Error: {e}')
+            if hasattr(e, 'response') and e.response is not None:
+                print(f'Status Code: {e.response.status_code}')
+                print(f'Response Text: {e.response.text}')
+            raise e
 
-```
-  </div>
+    # Example: Check status of a campaign
+    campaign = get_campaign_status('camp_123456')
+    print(f"Delivery Rate: {campaign['statistics']['deliveryRate']}%")
+    print(f"Cost: {campaign['cost']['actualTotal']} KES")
+    ```
+  </CodeGroup.Tab>
 </CodeGroup>
+
+## Error Responses
+
+| HTTP Code | Error Type | Description |
+|-----------|------------|-------------|
+| 400 | Invalid Request | Invalid campaign ID format |
+| 401 | Authentication Required | Missing or invalid X-Vendor-ID or X-API-Key |
+| 403 | Forbidden | Insufficient permissions to view campaign |
+| 404 | Not Found | Campaign not found |
+| 429 | Too Many Requests | Rate limit exceeded |
+| 500 | Internal Server Error | Server-side error while retrieving campaign |
+
 <Info>
-  For real-time updates on campaign status changes, consider configuring webhooks to receive notifications. This is more efficient than frequently polling this endpoint, especially for long-running campaigns.
+  See the [Error Handling Guide](/guides/error-handling) for details on handling these errors.
 </Info>
+
+## Next Steps
+
+<CardGroup col={2}>
+  <Card title="List Campaigns" icon="list" href="/api-reference/campaigns/list-campaigns">
+    View all your campaigns.
+  </Card>
+  <Card title="Create Campaign" icon="plus" href="/api-reference/campaigns/create-campaign">
+    Create a new campaign.
+  </Card>
+  <Card title="Error Handling" icon="bug" href="/guides/error-handling">
+    Learn about error responses and handling.
+  </Card>
+  <Card title="Testing" icon="flask" href="/guides/testing">
+    Learn how to test your campaign integration.
+  </Card>
+</CardGroup>
 ```

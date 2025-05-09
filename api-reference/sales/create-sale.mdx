@@ -11,6 +11,9 @@ import {
   CodeGroup,
   Info,
   Warning,
+  Steps,
+  Card,
+  CardGroup
 } from "mintlify/components";
 
 # Create Sale
@@ -21,7 +24,7 @@ Creates a new sale transaction for any supported product or service offered thro
 
 This endpoint requires **API Key Authentication**. Include your `X-Vendor-ID` and `X-API-Key` in the HTTP request headers.
 
-````http
+```http
 POST /v1/sales HTTP/1.1
 Host: api.fikisha.app
 Content-Type: application/json
@@ -30,8 +33,16 @@ X-Vendor-ID: YOUR_VENDOR_ID_HERE
 X-API-Key: YOUR_SECRET_API_KEY_HERE
 
 { ... request body ... }
-See the Authentication Guide for details.
-Request Body
+```
+
+<Info>
+  See the [Authentication Guide](/authentication) for details on generating and using API keys.
+</Info>
+
+## Request Body
+
+### Common Fields
+
 <ParamField body="type" type="string" required>
   The type of sale being requested. Supported values:
   - `airtime` - Mobile airtime purchase
@@ -39,43 +50,46 @@ Request Body
   - `utility` - Utility payment
   - `product` - Physical or digital product
 </ParamField>
+
 <ParamField body="amount" type="number" required>
   The transaction amount in KES. For fixed-price items, this must match the product price.
 </ParamField>
+
 <ParamField body="phoneNumber" type="string" required>
   The recipient's phone number, including country code (e.g., `+254712345678`).
 </ParamField>
+
 <ParamField body="provider" type="string" required>
   The service provider code (e.g., `safaricom`, `airtel`, `telkom` for mobile providers).
 </ParamField>
+
 <ParamField body="metadata" type="object">
   *(Optional)* Additional information about the sale.
   <Expandable>
     <ParamField body="customerName" type="string">
       *(Optional)* Name of the customer.
     </ParamField>
-<ParamField body="customerEmail" type="string">
-  *(Optional)* Email of the customer.
-</ParamField>
-
-<ParamField body="location" type="string">
-  *(Optional)* Location information.
-</ParamField>
-
-<ParamField body="notes" type="string">
-  *(Optional)* Additional notes about the sale.
-</ParamField>
-
-<ParamField body="additionalFields" type="object">
-  *(Optional)* Any additional custom fields.
-</ParamField>
+    <ParamField body="customerEmail" type="string">
+      *(Optional)* Email of the customer.
+    </ParamField>
+    <ParamField body="location" type="string">
+      *(Optional)* Location information.
+    </ParamField>
+    <ParamField body="notes" type="string">
+      *(Optional)* Additional notes about the sale.
+    </ParamField>
+    <ParamField body="additionalFields" type="object">
+      *(Optional)* Any additional custom fields.
+    </ParamField>
   </Expandable>
 </ParamField>
+
 <ParamField body="clientRef" type="string">
   *(Optional)* Your unique reference for this sale. Helps with reconciliation and tracking.
 </ParamField>
-Type-Specific Fields
-In addition to the common fields above, include these fields based on the type of sale:
+
+### Type-Specific Fields
+
 <Expandable title="For airtime sales (type: airtime)">
   <ParamField body="saleType" type="string">
     *(Optional)* The type of airtime sale. Allowed values:
@@ -83,6 +97,7 @@ In addition to the common fields above, include these fields based on the type o
     - `pin_airtime` - Generate an airtime PIN
   </ParamField>
 </Expandable>
+
 <Expandable title="For mobile data sales (type: mobiledata)">
   <ParamField body="bundleId" type="string" required>
     The ID of the data bundle to purchase.
@@ -91,6 +106,7 @@ In addition to the common fields above, include these fields based on the type o
     *(Optional)* The name of the data bundle (for record-keeping purposes).
   </ParamField>
 </Expandable>
+
 <Expandable title="For product sales (type: product)">
   <ParamField body="productId" type="string" required>
     The ID of the product being sold.
@@ -100,29 +116,26 @@ In addition to the common fields above, include these fields based on the type o
   </ParamField>
   <ParamField body="deliveryAddress" type="object">
     *(Optional)* Delivery address for physical products.
-<Expandable>
-  <ParamField body="street" type="string">
-    Street address.
-  </ParamField>
-
-  <ParamField body="city" type="string">
-    City.
-  </ParamField>
-
-  <ParamField body="state" type="string">
-    State or province.
-  </ParamField>
-
-  <ParamField body="postalCode" type="string">
-    Postal or ZIP code.
-  </ParamField>
-
-  <ParamField body="country" type="string">
-    Country code (e.g., `KE`).
+    <Expandable>
+      <ParamField body="street" type="string">
+        Street address.
+      </ParamField>
+      <ParamField body="city" type="string">
+        City.
+      </ParamField>
+      <ParamField body="state" type="string">
+        State or province.
+      </ParamField>
+      <ParamField body="postalCode" type="string">
+        Postal or ZIP code.
+      </ParamField>
+      <ParamField body="country" type="string">
+        Country code (e.g., `KE`).
+      </ParamField>
+    </Expandable>
   </ParamField>
 </Expandable>
-  </ParamField>
-</Expandable>
+
 <Expandable title="For utility payments (type: utility)">
   <ParamField body="accountNumber" type="string" required>
     The utility account number or identifier.
@@ -131,253 +144,311 @@ In addition to the common fields above, include these fields based on the type o
     The type of utility (e.g., `electricity`, `water`, `internet`).
   </ParamField>
 </Expandable>
-Example Request (Airtime Sale)
-json{
-  "type": "airtime",
-  "amount": 100,
-  "phoneNumber": "+254712345678",
-  "provider": "safaricom",
-  "saleType": "direct_airtime",
-  "metadata": {
-    "customerName": "John Doe",
-    "location": "Nairobi Store"
-  },
-  "clientRef": "sale-pos1-20240416-001"
-}
-Example Request (Data Bundle Sale)
-json{
-  "type": "mobiledata",
-  "amount": 250,
-  "phoneNumber": "+254723456789",
-  "provider": "airtel",
-  "bundleId": "weekly_2gb",
-  "bundleName": "Weekly 2GB Bundle",
-  "metadata": {
-    "customerName": "Jane Smith",
-    "customerEmail": "jane@example.com"
-  },
-  "clientRef": "sale-web-20240416-002"
-}
-Example Request (Product Sale)
-json{
-  "type": "product",
-  "amount": 2500,
-  "phoneNumber": "+254734567890",
-  "provider": "acme_electronics",
-  "productId": "prd_headphones",
-  "quantity": 1,
-  "metadata": {
-    "customerName": "Alice Johnson",
-    "notes": "Gift wrapped"
-  },
-  "deliveryAddress": {
-    "street": "123 Main Street",
-    "city": "Nairobi",
-    "postalCode": "00100",
-    "country": "KE"
-  },
-  "clientRef": "sale-web-20240416-003"
-}
-Response (200 OK)
+
+## Example Requests
+
+<CodeGroup>
+  <CodeGroup.Tab title="Airtime Sale">
+    ```json
+    {
+      "type": "airtime",
+      "amount": 100,
+      "phoneNumber": "+254712345678",
+      "provider": "safaricom",
+      "saleType": "direct_airtime",
+      "metadata": {
+        "customerName": "John Doe",
+        "location": "Nairobi Store"
+      },
+      "clientRef": "sale-pos1-20240416-001"
+    }
+    ```
+  </CodeGroup.Tab>
+  <CodeGroup.Tab title="Data Bundle Sale">
+    ```json
+    {
+      "type": "mobiledata",
+      "amount": 250,
+      "phoneNumber": "+254723456789",
+      "provider": "airtel",
+      "bundleId": "weekly_2gb",
+      "bundleName": "Weekly 2GB Bundle",
+      "metadata": {
+        "customerName": "Jane Smith",
+        "customerEmail": "jane@example.com"
+      },
+      "clientRef": "sale-web-20240416-002"
+    }
+    ```
+  </CodeGroup.Tab>
+  <CodeGroup.Tab title="Product Sale">
+    ```json
+    {
+      "type": "product",
+      "amount": 2500,
+      "phoneNumber": "+254734567890",
+      "provider": "acme_electronics",
+      "productId": "prd_headphones",
+      "quantity": 1,
+      "metadata": {
+        "customerName": "Alice Johnson",
+        "notes": "Gift wrapped"
+      },
+      "deliveryAddress": {
+        "street": "123 Main Street",
+        "city": "Nairobi",
+        "postalCode": "00100",
+        "country": "KE"
+      },
+      "clientRef": "sale-web-20240416-003"
+    }
+    ```
+  </CodeGroup.Tab>
+  <CodeGroup.Tab title="Utility Payment">
+    ```json
+    {
+      "type": "utility",
+      "amount": 1500,
+      "phoneNumber": "+254745678901",
+      "provider": "kplc",
+      "accountNumber": "1234567890",
+      "utilityType": "electricity",
+      "metadata": {
+        "customerName": "Bob Wilson",
+        "location": "Nairobi"
+      },
+      "clientRef": "sale-pos2-20240416-004"
+    }
+    ```
+  </CodeGroup.Tab>
+</CodeGroup>
+
+## Response
+
+### Success Response (200 OK)
+
 <ResponseField name="success" type="boolean" required>
   Indicates if the request was successful (`true`).
 </ResponseField>
+
 <ResponseField name="data" type="object" required>
-  Contains the sale transaction information.
+  Contains the created sale information.
   <Expandable>
     <ResponseField name="id" type="string" required>
-      The unique identifier for the sale transaction.
+      The unique identifier for the sale.
     </ResponseField>
-<ResponseField name="type" type="string" required>
-  The type of sale (matches the type from the request).
-</ResponseField>
 
-<ResponseField name="status" type="string" required>
-  The current status of the sale:
-  - `pending` - Initial state, sale is being processed
-  - `processing` - Sale is actively being processed
-  - `completed` - Sale has completed successfully
-  - `failed` - Sale has failed
-</ResponseField>
+    <ResponseField name="type" type="string" required>
+      The type of sale.
+    </ResponseField>
 
-<ResponseField name="amount" type="number" required>
-  The transaction amount.
-</ResponseField>
+    <ResponseField name="amount" type="number" required>
+      The transaction amount in KES.
+    </ResponseField>
 
-<ResponseField name="phoneNumber" type="string" required>
-  The recipient's phone number.
-</ResponseField>
+    <ResponseField name="phoneNumber" type="string" required>
+      The recipient's phone number.
+    </ResponseField>
 
-<ResponseField name="provider" type="string" required>
-  The service provider code.
-</ResponseField>
+    <ResponseField name="provider" type="string" required>
+      The service provider code.
+    </ResponseField>
 
-<ResponseField name="clientRef" type="string">
-  *(Optional)* Your reference string if provided in the request.
-</ResponseField>
+    <ResponseField name="status" type="string" required>
+      The current status of the sale. Initial values:
+      - `pending` - Sale is being processed
+      - `completed` - Sale was successful
+      - `failed` - Sale failed
+    </ResponseField>
 
-<ResponseField name="createdAt" type="string" required>
-  ISO 8601 timestamp of when the sale was created.
-</ResponseField>
+    <ResponseField name="metadata" type="object">
+      *(Optional)* Additional information about the sale.
+    </ResponseField>
 
-<ResponseField name="updatedAt" type="string" required>
-  ISO 8601 timestamp of when the sale was last updated.
-</ResponseField>
+    <ResponseField name="clientRef" type="string">
+      *(Optional)* Your unique reference for this sale.
+    </ResponseField>
 
-<ResponseField name="metadata" type="object">
-  *(Optional)* Additional information about the sale.
-</ResponseField>
+    <ResponseField name="createdAt" type="string" required>
+      ISO 8601 timestamp of when the sale was created.
+    </ResponseField>
 
-<ResponseField name="transactionId" type="string" required>
-  The ID of the underlying transaction (can be used to check status later).
-</ResponseField>
+    <ResponseField name="updatedAt" type="string" required>
+      ISO 8601 timestamp of when the sale was last updated.
+    </ResponseField>
   </Expandable>
 </ResponseField>
-Example Response (Airtime Sale)
-json{
+
+## Example Responses
+
+### Success Response
+
+```json
+{
   "success": true,
   "data": {
     "id": "sale_123456",
     "type": "airtime",
-    "status": "pending",
     "amount": 100,
     "phoneNumber": "+254712345678",
     "provider": "safaricom",
-    "clientRef": "sale-pos1-20240416-001",
-    "createdAt": "2024-04-16T14:30:00Z",
-    "updatedAt": "2024-04-16T14:30:00Z",
+    "status": "pending",
     "metadata": {
       "customerName": "John Doe",
       "location": "Nairobi Store"
     },
-    "transactionId": "txn_123456"
+    "clientRef": "sale-pos1-20240416-001",
+    "createdAt": "2024-04-16T14:30:00Z",
+    "updatedAt": "2024-04-16T14:30:00Z"
   }
 }
-Processing Flow
-Sales are processed asynchronously:
+```
 
-When you submit a sale request, it's validated and a sale record is created.
-The system returns a 200 OK response with the initial sale details.
-The sale is processed in the background.
-The final status can be monitored via:
+## Error Responses
 
-Webhooks (recommended) - Configure a webhook to receive sale.completed or sale.failed events
-Status checks - Query the Get Sale Status endpoint with the sale ID
+| HTTP Code | Error Type | Description |
+|-----------|------------|-------------|
+| 400 | Invalid Request | Missing required fields or invalid values |
+| 401 | Authentication Required | Missing or invalid X-Vendor-ID or X-API-Key |
+| 402 | Payment Required | Insufficient wallet balance |
+| 403 | Forbidden | Insufficient permissions to create sales |
+| 404 | Not Found | Referenced product or bundle not found |
+| 429 | Too Many Requests | Rate limit exceeded |
+| 500 | Internal Server Error | Server-side error while creating sale |
 
+<Info>
+  See the [Error Handling Guide](/guides/error-handling) for details on handling these errors.
+</Info>
 
+## Example Requests
 
-Possible Errors
-HTTP CodeError TypeDescription400Invalid RequestMissing required fields or invalid values.401Authentication RequiredMissing or invalid X-Vendor-ID or X-API-Key.402Insufficient FundsWallet balance too low for the requested transaction.404Not FoundThe specified bundleId or productId does not exist.429Too Many RequestsRate limit exceeded.500Internal Server ErrorServer-side error during processing.
-See the Error Handling Guide for details.
-Example (cURL)
-bash# Replace YOUR_VENDOR_ID and YOUR_API_KEY
-curl -X POST https://api.fikisha.app/v1/sales \
-  -H "Content-Type: application/json" \
-  -H "Accept: application/json" \
-  -H "X-Vendor-ID: YOUR_VENDOR_ID" \
-  -H "X-API-Key: YOUR_API_KEY" \
-  -d '{
-    "type": "airtime",
-    "amount": 100,
-    "phoneNumber": "+254712345678",
-    "provider": "safaricom",
-    "saleType": "direct_airtime",
-    "metadata": {
-      "customerName": "John Doe"
-    },
-    "clientRef": "sale-cli-20240416-001"
-  }'
 <CodeGroup>
-  <div>
+  <CodeGroup.Tab title="cURL">
+    ```bash
+    # Replace YOUR_VENDOR_ID and YOUR_API_KEY
+    curl -X POST "https://api.fikisha.app/v1/sales" \
+      -H "Content-Type: application/json" \
+      -H "Accept: application/json" \
+      -H "X-Vendor-ID: YOUR_VENDOR_ID" \
+      -H "X-API-Key: YOUR_API_KEY" \
+      -d '{
+        "type": "airtime",
+        "amount": 100,
+        "phoneNumber": "+254712345678",
+        "provider": "safaricom",
+        "saleType": "direct_airtime",
+        "metadata": {
+          "customerName": "John Doe",
+          "location": "Nairobi Store"
+        },
+        "clientRef": "sale-pos1-20240416-001"
+      }'
+    ```
+  </CodeGroup.Tab>
+  <CodeGroup.Tab title="JavaScript">
     ```javascript
     const axios = require('axios');
-async function createSale(saleData) {
-  const url = 'https://api.fikisha.app/v1/sales';
-  const headers = {
-    'Content-Type': 'application/json',
-    'Accept': 'application/json',
-    'X-Vendor-ID': 'YOUR_VENDOR_ID', // Replace with your Vendor ID
-    'X-API-Key': 'YOUR_API_KEY'   // Replace with your API Key
-  };
 
-  try {
-    const response = await axios.post(url, saleData, { headers });
-    console.log('Sale Created:', response.data.data.id);
-    console.log('Transaction ID:', response.data.data.transactionId);
-    return response.data.data;
-  } catch (error) {
-    console.error('API Error:', error.response ? error.response.data : error.message);
-    throw error;
-  }
-}
-
-// Example: Create a data bundle sale
-const saleData = {
-  type: "mobiledata",
-  amount: 250,
-  phoneNumber: "+254723456789",
-  provider: "airtel",
-  bundleId: "weekly_2gb",
-  metadata: {
-    customerName: "Jane Smith"
-  },
-  clientRef: "sale-js-20240416-001"
-};
-
-createSale(saleData);
-````
-
-  </div>
-  <div>
-    ```python
-    import requests
-    import json
-def create_sale(sale_data):
-    url = 'https://api.fikisha.app/v1/sales'
-    headers = {
+    async function createSale(saleData) {
+      const url = 'https://api.fikisha.app/v1/sales';
+      const headers = {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
-        'X-Vendor-ID': 'YOUR_VENDOR_ID', # Replace with your Vendor ID
-        'X-API-Key': 'YOUR_API_KEY'   # Replace with your API Key
+        'X-Vendor-ID': 'YOUR_VENDOR_ID', // Replace with your Vendor ID
+        'X-API-Key': 'YOUR_API_KEY'   // Replace with your API Key
+      };
+
+      try {
+        const response = await axios.post(url, saleData, { headers });
+        console.log(`Sale created with ID: ${response.data.data.id}`);
+        return response.data.data;
+      } catch (error) {
+        console.error('API Error:', error.response ? error.response.data : error.message);
+        throw error;
+      }
     }
 
-    try:
-        response = requests.post(url, headers=headers, json=sale_data)
-        response.raise_for_status()  # Raise exception for HTTP errors
-        result = response.json()
-        print(f"Sale Created: {result['data']['id']}")
-        print(f"Transaction ID: {result['data']['transactionId']}")
-        return result['data']
-    except requests.exceptions.RequestException as e:
-        print(f'API Error: {e}')
-        if hasattr(e, 'response') and e.response is not None:
-            print(f'Status Code: {e.response.status_code}')
-            print(f'Response Text: {e.response.text}')
-        raise e
+    // Example: Create an airtime sale
+    const saleData = {
+      type: "airtime",
+      amount: 100,
+      phoneNumber: "+254712345678",
+      provider: "safaricom",
+      saleType: "direct_airtime",
+      metadata: {
+        customerName: "John Doe",
+        location: "Nairobi Store"
+      },
+      clientRef: "sale-pos1-20240416-001"
+    };
 
-# Example: Create an airtime sale
+    createSale(saleData).then(sale => {
+      console.log(`Sale Status: ${sale.status}`);
+      console.log(`Amount: ${sale.amount} KES`);
+    });
+    ```
+  </CodeGroup.Tab>
+  <CodeGroup.Tab title="Python">
+    ```python
+    import requests
 
-sale_data = {
-"type": "airtime",
-"amount": 100,
-"phoneNumber": "+254712345678",
-"provider": "safaricom",
-"saleType": "direct_airtime",
-"metadata": {
-"customerName": "John Doe"
-},
-"clientRef": "sale-py-20240416-001"
-}
+    def create_sale(sale_data):
+        url = 'https://api.fikisha.app/v1/sales'
+        headers = {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'X-Vendor-ID': 'YOUR_VENDOR_ID', # Replace with your Vendor ID
+            'X-API-Key': 'YOUR_API_KEY'   # Replace with your API Key
+        }
 
-create_sale(sale_data)
+        try:
+            response = requests.post(url, json=sale_data, headers=headers)
+            response.raise_for_status()
+            data = response.json()
+            print(f"Sale created with ID: {data['data']['id']}")
+            return data['data']
+        except requests.exceptions.RequestException as e:
+            print(f'API Error: {e}')
+            if hasattr(e, 'response') and e.response is not None:
+                print(f'Status Code: {e.response.status_code}')
+                print(f'Response Text: {e.response.text}')
+            raise e
 
-```
-  </div>
+    # Example: Create an airtime sale
+    sale_data = {
+        "type": "airtime",
+        "amount": 100,
+        "phoneNumber": "+254712345678",
+        "provider": "safaricom",
+        "saleType": "direct_airtime",
+        "metadata": {
+            "customerName": "John Doe",
+            "location": "Nairobi Store"
+        },
+        "clientRef": "sale-pos1-20240416-001"
+    }
+
+    sale = create_sale(sale_data)
+    print(f"Sale Status: {sale['status']}")
+    print(f"Amount: {sale['amount']} KES")
+    ```
+  </CodeGroup.Tab>
 </CodeGroup>
-<Warning>
-  Always ensure the `amount` parameter matches the product price for fixed-price items like data bundles. Mismatched amounts will result in validation errors.
-</Warning>
-<Info>
-  The `clientRef` field is optional but highly recommended. It should be a unique identifier from your system that you can use to reconcile the sale and prevent duplicate transactions in case of network issues.
-</Info>
+
+## Next Steps
+
+<CardGroup col={2}>
+  <Card title="Get Sale Status" icon="info" href="/api-reference/sales/get-sale-status">
+    Check the status of a specific sale.
+  </Card>
+  <Card title="List Sales" icon="list" href="/api-reference/sales/list-sales">
+    View all your sales transactions.
+  </Card>
+  <Card title="Error Handling" icon="bug" href="/guides/error-handling">
+    Learn about error responses and handling.
+  </Card>
+  <Card title="Testing" icon="flask" href="/guides/testing">
+    Learn how to test your sales integration.
+  </Card>
+</CardGroup>
 ```

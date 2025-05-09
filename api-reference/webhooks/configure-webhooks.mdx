@@ -11,6 +11,9 @@ import {
   CodeGroup,
   Info,
   Warning,
+  Card,
+  CardGroup,
+  Steps
 } from "mintlify/components";
 
 # Configure Webhook
@@ -21,7 +24,7 @@ Creates or updates a webhook configuration to receive real-time event notificati
 
 This endpoint requires **API Key Authentication**. Include your `X-Vendor-ID` and `X-API-Key` in the HTTP request headers.
 
-````http
+```http
 POST /v1/webhooks HTTP/1.1
 Host: api.fikisha.app
 Content-Type: application/json
@@ -30,11 +33,18 @@ X-Vendor-ID: YOUR_VENDOR_ID_HERE
 X-API-Key: YOUR_SECRET_API_KEY_HERE
 
 { ... request body ... }
-See the Authentication Guide for details.
-Request Body
+```
+
+<Info>
+  See the [Authentication Guide](/authentication) for details on generating and using API keys.
+</Info>
+
+## Request Body
+
 <ParamField body="url" type="string" required>
   The HTTPS URL where webhook events should be sent. The URL must be publicly accessible and respond to POST requests.
 </ParamField>
+
 <ParamField body="events" type="array" required>
   An array of event types to subscribe to.
   <Expandable>
@@ -47,24 +57,31 @@ Request Body
       - `sale.failed` - Sale failed
       - `campaign.completed` - Campaign successfully completed
       - `campaign.failed` - Campaign failed
-  Use `*` to subscribe to all available events.
-</ParamField>
+      Use `*` to subscribe to all available events.
+    </ParamField>
   </Expandable>
 </ParamField>
+
 <ParamField body="secret" type="string">
   *(Optional but Highly Recommended)* A secret string used to sign webhook payloads. This allows you to verify that events were sent by Fikisha.
 </ParamField>
+
 <ParamField body="description" type="string">
   *(Optional)* A description of the webhook configuration.
 </ParamField>
+
 <ParamField body="isActive" type="boolean">
   *(Optional)* Whether the webhook should be active. Default: `true`.
 </ParamField>
+
 <ParamField body="metadata" type="object">
   *(Optional)* Additional metadata for the webhook configuration.
 </ParamField>
-Example Request
-json{
+
+## Example Request
+
+```json
+{
   "url": "https://example.com/webhook/fikisha",
   "events": [
     "transaction.completed",
@@ -79,70 +96,71 @@ json{
     "version": "v1"
   }
 }
-Response (200 OK)
+```
+
+## Response
+
+### Success Response (200 OK)
+
 <ResponseField name="success" type="boolean" required>
   Indicates if the request was successful (`true`).
 </ResponseField>
+
 <ResponseField name="data" type="object" required>
   Contains the webhook configuration information.
   <Expandable>
     <ResponseField name="id" type="string" required>
       The unique identifier for the webhook configuration.
     </ResponseField>
-<ResponseField name="url" type="string" required>
-  The URL where webhook events will be sent.
-</ResponseField>
-
-<ResponseField name="events" type="array" required>
-  The events this webhook is subscribed to.
-</ResponseField>
-
-<ResponseField name="description" type="string">
-  *(Optional)* The webhook description.
-</ResponseField>
-
-<ResponseField name="isActive" type="boolean" required>
-  Whether the webhook is currently active.
-</ResponseField>
-
-<ResponseField name="createdAt" type="string" required>
-  ISO 8601 timestamp of when the webhook was created.
-</ResponseField>
-
-<ResponseField name="updatedAt" type="string" required>
-  ISO 8601 timestamp of when the webhook was last updated.
-</ResponseField>
-
-<ResponseField name="lastTestedAt" type="string">
-  *(Optional)* ISO 8601 timestamp of when the webhook was last tested.
-</ResponseField>
-
-<ResponseField name="metadata" type="object">
-  *(Optional)* Additional metadata for the webhook.
-</ResponseField>
+    <ResponseField name="url" type="string" required>
+      The URL where webhook events will be sent.
+    </ResponseField>
+    <ResponseField name="events" type="array" required>
+      The events this webhook is subscribed to.
+    </ResponseField>
+    <ResponseField name="description" type="string">
+      *(Optional)* The webhook description.
+    </ResponseField>
+    <ResponseField name="isActive" type="boolean" required>
+      Whether the webhook is currently active.
+    </ResponseField>
+    <ResponseField name="createdAt" type="string" required>
+      ISO 8601 timestamp of when the webhook was created.
+    </ResponseField>
+    <ResponseField name="updatedAt" type="string" required>
+      ISO 8601 timestamp of when the webhook was last updated.
+    </ResponseField>
+    <ResponseField name="lastTestedAt" type="string">
+      *(Optional)* ISO 8601 timestamp of when the webhook was last tested.
+    </ResponseField>
+    <ResponseField name="metadata" type="object">
+      *(Optional)* Additional metadata for the webhook.
+    </ResponseField>
   </Expandable>
 </ResponseField>
+
 <ResponseField name="testDelivery" type="object">
   *(Optional)* Contains information about a test ping event that is delivered when a webhook is created or updated.
   <Expandable>
     <ResponseField name="deliveryId" type="string" required>
       The unique identifier for the test delivery.
     </ResponseField>
-<ResponseField name="status" type="string" required>
-  The status of the test delivery (e.g., `success`, `failed`, `pending`).
-</ResponseField>
-
-<ResponseField name="statusCode" type="integer">
-  *(Optional)* The HTTP status code received from your server.
-</ResponseField>
-
-<ResponseField name="message" type="string">
-  *(Optional)* Additional information about the test delivery.
-</ResponseField>
+    <ResponseField name="status" type="string" required>
+      The status of the test delivery (e.g., `success`, `failed`, `pending`).
+    </ResponseField>
+    <ResponseField name="statusCode" type="integer">
+      *(Optional)* The HTTP status code received from your server.
+    </ResponseField>
+    <ResponseField name="message" type="string">
+      *(Optional)* Additional information about the test delivery.
+    </ResponseField>
   </Expandable>
 </ResponseField>
-Example Response
-json{
+
+## Example Response
+
+```json
+{
   "success": true,
   "data": {
     "id": "whook_123456",
@@ -169,9 +187,14 @@ json{
     "message": "Test ping event successfully delivered"
   }
 }
-Webhook Payload Structure
+```
+
+## Webhook Payload Structure
+
 When an event occurs that matches your subscription, Fikisha will send a POST request to your webhook URL with a JSON payload containing event details:
-json{
+
+```json
+{
   "eventType": "transaction.completed",
   "eventId": "evt_123456",
   "timestamp": "2024-04-16T15:45:30Z",
@@ -180,240 +203,131 @@ json{
   },
   "vendorId": "vd_live_abcdef1234567890"
 }
-If you provided a webhook secret, the request will include a Fikisha-Signature header that you should use to verify the payload's authenticity.
-Possible Errors
-HTTP CodeError TypeDescription400Invalid RequestMissing required fields, invalid URL format, or invalid event type.401Authentication RequiredMissing or invalid X-Vendor-ID or X-API-Key.403ForbiddenInsufficient permissions to configure webhooks.429Too Many RequestsRate limit exceeded.500Internal Server ErrorServer-side error while configuring the webhook.
-See the Error Handling Guide for details.
-Example (cURL)
-bash# Replace YOUR_VENDOR_ID and YOUR_API_KEY
-curl -X POST https://api.fikisha.app/v1/webhooks \
-  -H "Content-Type: application/json" \
-  -H "Accept: application/json" \
-  -H "X-Vendor-ID: YOUR_VENDOR_ID" \
-  -H "X-API-Key: YOUR_API_KEY" \
-  -d '{
-    "url": "https://example.com/webhook/fikisha",
-    "events": [
-      "transaction.completed",
-      "transaction.failed"
-    ],
-    "secret": "whsec_YOUR_WEBHOOK_SECRET",
-    "description": "Transaction notifications webhook"
-  }'
+```
+
+<Warning>
+  If you provided a webhook secret, the request will include a `Fikisha-Signature` header that you should use to verify the payload's authenticity.
+</Warning>
+
+## Error Responses
+
+| HTTP Code | Error Type | Description |
+|-----------|------------|-------------|
+| 400 | Invalid Request | Missing required fields, invalid URL format, or invalid event type. |
+| 401 | Authentication Required | Missing or invalid X-Vendor-ID or X-API-Key. |
+| 403 | Forbidden | Insufficient permissions to configure webhooks. |
+| 429 | Too Many Requests | Rate limit exceeded. |
+| 500 | Internal Server Error | Server-side error while configuring the webhook. |
+
+<Info>
+  See the [Error Handling Guide](/guides/error-handling) for details on handling these errors.
+</Info>
+
+## Example Requests
+
 <CodeGroup>
-  <div>
+  <CodeGroup.Tab title="cURL">
+    ```bash
+    # Replace YOUR_VENDOR_ID and YOUR_API_KEY
+    curl -X POST https://api.fikisha.app/v1/webhooks \
+      -H "Content-Type: application/json" \
+      -H "Accept: application/json" \
+      -H "X-Vendor-ID: YOUR_VENDOR_ID" \
+      -H "X-API-Key: YOUR_API_KEY" \
+      -d '{
+        "url": "https://example.com/webhook/fikisha",
+        "events": [
+          "transaction.completed",
+          "transaction.failed"
+        ],
+        "secret": "whsec_YOUR_WEBHOOK_SECRET",
+        "description": "Production webhook for transaction notifications"
+      }'
+    ```
+  </CodeGroup.Tab>
+  <CodeGroup.Tab title="JavaScript">
     ```javascript
     const axios = require('axios');
-async function configureWebhook(webhookData) {
-  const url = 'https://api.fikisha.app/v1/webhooks';
-  const headers = {
-    'Content-Type': 'application/json',
-    'Accept': 'application/json',
-    'X-Vendor-ID': 'YOUR_VENDOR_ID', // Replace with your Vendor ID
-    'X-API-Key': 'YOUR_API_KEY'   // Replace with your API Key
-  };
 
-  try {
-    const response = await axios.post(url, webhookData, { headers });
-    console.log('Webhook Configured:', response.data.data.id);
-    console.log('Test Delivery Status:', response.data.testDelivery.status);
-    return response.data;
-  } catch (error) {
-    console.error('API Error:', error.response ? error.response.data : error.message);
-    throw error;
-  }
-}
-
-// Example Usage
-const webhookData = {
-  url: "https://example.com/webhook/fikisha",
-  events: [
-    "transaction.completed",
-    "transaction.failed"
-  ],
-  secret: "whsec_YOUR_WEBHOOK_SECRET",
-  description: "Transaction notifications webhook"
-};
-
-configureWebhook(webhookData);
-````
-
-  </div>
-  <div>
-    ```python
-    import requests
-    import json
-def configure_webhook(webhook_data):
-    url = 'https://api.fikisha.app/v1/webhooks'
-    headers = {
+    async function configureWebhook(config) {
+      const url = 'https://api.fikisha.app/v1/webhooks';
+      const headers = {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
-        'X-Vendor-ID': 'YOUR_VENDOR_ID', # Replace with your Vendor ID
-        'X-API-Key': 'YOUR_API_KEY'   # Replace with your API Key
+        'X-Vendor-ID': 'YOUR_VENDOR_ID', // Replace with your Vendor ID
+        'X-API-Key': 'YOUR_API_KEY'   // Replace with your API Key
+      };
+
+      try {
+        const response = await axios.post(url, config, { headers });
+        console.log('Webhook configured:', response.data.data.id);
+        return response.data.data;
+      } catch (error) {
+        console.error('API Error:', error.response ? error.response.data : error.message);
+        throw error;
+      }
     }
 
-    try:
-        response = requests.post(url, headers=headers, json=webhook_data)
-        response.raise_for_status()  # Raise exception for HTTP errors
-        result = response.json()
-        print(f"Webhook Configured: {result['data']['id']}")
-        print(f"Test Delivery Status: {result['testDelivery']['status']}")
-        return result
-    except requests.exceptions.RequestException as e:
-        print(f'API Error: {e}')
-        if hasattr(e, 'response') and e.response is not None:
-            print(f'Status Code: {e.response.status_code}')
-            print(f'Response Text: {e.response.text}')
-        raise e
-
-# Example Usage
-
-webhook_data = {
-"url": "https://example.com/webhook/fikisha",
-"events": [
-"transaction.completed",
-"transaction.failed"
-],
-"secret": "whsec_YOUR_WEBHOOK_SECRET",
-"description": "Transaction notifications webhook"
-}
-
-configure_webhook(webhook_data)
-
-````
-  </div>
-</CodeGroup>
-Verifying Webhook Signatures
-To verify that webhook payloads were actually sent by Fikisha, you should validate the signature included in the Fikisha-Signature header. Here's how:
-<CodeGroup>
-  <div>
-    ```javascript
-    const crypto = require('crypto');
-function verifyWebhookSignature(payload, signature, secret) {
-  // Create an HMAC with your webhook secret
-  const hmac = crypto.createHmac('sha256', secret);
-
-  // Update with the request body (as a string)
-  const payloadString = typeof payload === 'string'
-    ? payload
-    : JSON.stringify(payload);
-
-  hmac.update(payloadString);
-
-  // Generate the expected signature
-  const expectedSignature = hmac.digest('hex');
-
-  // Compare signatures using a constant-time comparison
-  // to prevent timing attacks
-  return crypto.timingSafeEqual(
-    Buffer.from(signature),
-    Buffer.from(expectedSignature)
-  );
-}
-
-// Express.js example webhook endpoint
-app.post('/webhook/fikisha', (req, res) => {
-  const signature = req.headers['fikisha-signature'];
-  const payload = req.body;
-  const secret = 'whsec_YOUR_WEBHOOK_SECRET';
-
-  // Verify signature immediately
-  if (!signature || !verifyWebhookSignature(payload, signature, secret)) {
-    return res.status(401).send('Invalid signature');
-  }
-
-  // Return a 200 response quickly to acknowledge receipt
-  res.status(200).send('Webhook received');
-
-  // Process the webhook event asynchronously
-  processWebhookEvent(payload).catch(error => {
-    console.error('Error processing webhook:', error);
-  });
-});
-
-async function processWebhookEvent(event) {
-  const { eventType, eventId, data } = event;
-
-  // Handle different event types
-  switch (eventType) {
-    case 'transaction.completed':
-      await handleCompletedTransaction(data);
-      break;
-    case 'transaction.failed':
-      await handleFailedTransaction(data);
-      break;
-    // Handle other event types...
-    default:
-      console.log(`Unhandled event type: ${eventType}`);
-  }
-}
-````
-
-  </div>
-  <div>
+    // Example: Configure a webhook for transaction events
+    configureWebhook({
+      url: 'https://example.com/webhook/fikisha',
+      events: ['transaction.completed', 'transaction.failed'],
+      secret: 'whsec_YOUR_WEBHOOK_SECRET',
+      description: 'Production webhook for transaction notifications'
+    });
+    ```
+  </CodeGroup.Tab>
+  <CodeGroup.Tab title="Python">
     ```python
-    import hmac
-    import hashlib
-    import json
-    from flask import Flask, request, jsonify
-app = Flask(__name__)
-WEBHOOK_SECRET = 'whsec_YOUR_WEBHOOK_SECRET'
+    import requests
 
-def verify_webhook_signature(payload, signature, secret): # Create an HMAC with your webhook secret
-hmac_obj = hmac.new(
-key=secret.encode('utf-8'),
-msg=payload.encode('utf-8') if isinstance(payload, str) else json.dumps(payload).encode('utf-8'),
-digestmod=hashlib.sha256
-)
+    def configure_webhook(config):
+        url = 'https://api.fikisha.app/v1/webhooks'
+        headers = {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'X-Vendor-ID': 'YOUR_VENDOR_ID', # Replace with your Vendor ID
+            'X-API-Key': 'YOUR_API_KEY'   # Replace with your API Key
+        }
 
-    # Generate the expected signature
-    expected_signature = hmac_obj.hexdigest()
+        try:
+            response = requests.post(url, json=config, headers=headers)
+            response.raise_for_status()
+            result = response.json()
+            print(f"Webhook configured: {result['data']['id']}")
+            return result['data']
+        except requests.exceptions.RequestException as e:
+            print(f'API Error: {e}')
+            if hasattr(e, 'response') and e.response is not None:
+                print(f'Status Code: {e.response.status_code}')
+                print(f'Response Text: {e.response.text}')
+            raise e
 
-    # Compare signatures
-    return hmac.compare_digest(signature, expected_signature)
-
-@app.route('/webhook/fikisha', methods=['POST'])
-def webhook_endpoint():
-signature = request.headers.get('Fikisha-Signature')
-payload = request.json
-
-    # Verify signature immediately
-    if not signature or not verify_webhook_signature(payload, signature, WEBHOOK_SECRET):
-        return jsonify({'error': 'Invalid signature'}), 401
-
-    # Return a 200 response quickly to acknowledge receipt
-    response = jsonify({'status': 'received'})
-
-    # In a production environment, you would typically
-    # process the webhook event asynchronously (e.g., using a task queue)
-    process_webhook_event(payload)
-
-    return response, 200
-
-def process_webhook_event(event):
-event_type = event.get('eventType')
-event_id = event.get('eventId')
-data = event.get('data')
-
-    # Handle different event types
-    if event_type == 'transaction.completed':
-        handle_completed_transaction(data)
-    elif event_type == 'transaction.failed':
-        handle_failed_transaction(data)
-    # Handle other event types...
-    else:
-        print(f"Unhandled event type: {event_type}")
-
-if **name** == '**main**':
-app.run(port=5000)
-
-```
-  </div>
+    # Example: Configure a webhook for transaction events
+    configure_webhook({
+        'url': 'https://example.com/webhook/fikisha',
+        'events': ['transaction.completed', 'transaction.failed'],
+        'secret': 'whsec_YOUR_WEBHOOK_SECRET',
+        'description': 'Production webhook for transaction notifications'
+    })
+    ```
+  </CodeGroup.Tab>
 </CodeGroup>
-<Warning>
-  Always respond to webhook events with a `200 OK` status code as quickly as possible. Process the webhook payload asynchronously to prevent timeouts. If Fikisha doesn't receive a `200 OK` response within a reasonable timeframe (typically 10 seconds), the system may retry the delivery.
-</Warning>
-<Info>
-  For development and testing, tools like [ngrok](https://ngrok.com/) can expose your local server to the internet, allowing you to receive and test webhooks during development.
-</Info>
+
+## Next Steps
+
+<CardGroup col={2}>
+  <Card title="List Webhooks" icon="list" href="/api-reference/webhooks/list-webhooks">
+    View all your configured webhooks.
+  </Card>
+  <Card title="List Webhook Deliveries" icon="clock" href="/api-reference/webhooks/list-webhook-deliveries">
+    Check the delivery status of webhook events.
+  </Card>
+  <Card title="Error Handling" icon="bug" href="/guides/error-handling">
+    Learn about error responses and handling.
+  </Card>
+  <Card title="Testing" icon="flask" href="/guides/testing">
+    Learn how to test your webhook integration.
+  </Card>
+</CardGroup>
 ```

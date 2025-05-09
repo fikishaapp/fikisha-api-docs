@@ -10,6 +10,10 @@ import {
   Expandable,
   CodeGroup,
   Info,
+  Warning,
+  Card,
+  CardGroup,
+  Steps
 } from "mintlify/components";
 
 # List Webhooks
@@ -20,91 +24,106 @@ Retrieves a list of webhook configurations from your vendor account. This endpoi
 
 This endpoint requires **API Key Authentication**. Include your `X-Vendor-ID` and `X-API-Key` in the HTTP request headers.
 
-````http
+```http
 GET /v1/webhooks HTTP/1.1
 Host: api.fikisha.app
 X-Vendor-ID: YOUR_VENDOR_ID_HERE
 X-API-Key: YOUR_SECRET_API_KEY_HERE
 Accept: application/json
-See the Authentication Guide for details.
-Query Parameters
+```
+
+<Info>
+  See the [Authentication Guide](/authentication) for details on generating and using API keys.
+</Info>
+
+## Query Parameters
+
 <ParamField query="includeInactive" type="boolean">
   *(Optional)* Whether to include inactive webhooks in the response.
   - Default: `false` (only active webhooks are returned)
 </ParamField>
-Response (200 OK)
+
+## Response
+
+### Success Response (200 OK)
+
 <ResponseField name="success" type="boolean" required>
   Indicates if the request was successful (`true`).
 </ResponseField>
+
 <ResponseField name="data" type="object" required>
   Contains the list of webhook configurations.
   <Expandable>
     <ResponseField name="webhooks" type="array" required>
       An array of webhook configuration objects.
-  <Expandable>
-    <ResponseField name="id" type="string" required>
-      The unique identifier for the webhook configuration.
-    </ResponseField>
-
-    <ResponseField name="url" type="string" required>
-      The URL where webhook events are sent.
-    </ResponseField>
-
-    <ResponseField name="events" type="array" required>
-      The events this webhook is subscribed to.
-    </ResponseField>
-
-    <ResponseField name="description" type="string">
-      *(Optional)* The webhook description.
-    </ResponseField>
-
-    <ResponseField name="isActive" type="boolean" required>
-      Whether the webhook is currently active.
-    </ResponseField>
-
-    <ResponseField name="createdAt" type="string" required>
-      ISO 8601 timestamp of when the webhook was created.
-    </ResponseField>
-
-    <ResponseField name="updatedAt" type="string" required>
-      ISO 8601 timestamp of when the webhook was last updated.
-    </ResponseField>
-
-    <ResponseField name="lastTestedAt" type="string">
-      *(Optional)* ISO 8601 timestamp of when the webhook was last tested.
-    </ResponseField>
-
-    <ResponseField name="deliveryStats" type="object" required>
-      Statistics about webhook deliveries.
-
       <Expandable>
-        <ResponseField name="total" type="integer" required>
-          Total number of delivery attempts.
+        <ResponseField name="id" type="string" required>
+          The unique identifier for the webhook configuration.
         </ResponseField>
 
-        <ResponseField name="successful" type="integer" required>
-          Number of successful deliveries.
+        <ResponseField name="url" type="string" required>
+          The URL where webhook events are sent.
         </ResponseField>
 
-        <ResponseField name="failed" type="integer" required>
-          Number of failed deliveries.
+        <ResponseField name="events" type="array" required>
+          The events this webhook is subscribed to.
         </ResponseField>
 
-        <ResponseField name="successRate" type="number" required>
-          Percentage of successful deliveries (0-100).
+        <ResponseField name="description" type="string">
+          *(Optional)* The webhook description.
+        </ResponseField>
+
+        <ResponseField name="isActive" type="boolean" required>
+          Whether the webhook is currently active.
+        </ResponseField>
+
+        <ResponseField name="createdAt" type="string" required>
+          ISO 8601 timestamp of when the webhook was created.
+        </ResponseField>
+
+        <ResponseField name="updatedAt" type="string" required>
+          ISO 8601 timestamp of when the webhook was last updated.
+        </ResponseField>
+
+        <ResponseField name="lastTestedAt" type="string">
+          *(Optional)* ISO 8601 timestamp of when the webhook was last tested.
+        </ResponseField>
+
+        <ResponseField name="deliveryStats" type="object" required>
+          Statistics about webhook deliveries.
+          <Expandable>
+            <ResponseField name="total" type="integer" required>
+              Total number of delivery attempts.
+            </ResponseField>
+
+            <ResponseField name="successful" type="integer" required>
+              Number of successful deliveries.
+            </ResponseField>
+
+            <ResponseField name="failed" type="integer" required>
+              Number of failed deliveries.
+            </ResponseField>
+
+            <ResponseField name="successRate" type="number" required>
+              Percentage of successful deliveries (0-100).
+            </ResponseField>
+          </Expandable>
+        </ResponseField>
+
+        <ResponseField name="metadata" type="object">
+          *(Optional)* Additional metadata for the webhook.
         </ResponseField>
       </Expandable>
     </ResponseField>
+  </Expandable>
+</ResponseField>
 
-    <ResponseField name="metadata" type="object">
-      *(Optional)* Additional metadata for the webhook.
-    </ResponseField>
-  </Expandable>
-</ResponseField>
-  </Expandable>
-</ResponseField>
-Example Response
-json{
+## Example Responses
+
+### Success Response with Webhooks
+
+```json
+{
   "success": true,
   "data": {
     "webhooks": [
@@ -156,87 +175,126 @@ json{
     ]
   }
 }
-Empty Results Response
-json{
+```
+
+### Empty Results Response
+
+```json
+{
   "success": true,
   "data": {
     "webhooks": []
   }
 }
-Possible Errors
-HTTP CodeError TypeDescription401Authentication RequiredMissing or invalid X-Vendor-ID or X-API-Key.403ForbiddenInsufficient permissions to list webhooks.500Internal Server ErrorServer-side error while retrieving webhooks.
-See the Error Handling Guide for details.
-Example (Fetch Webhooks)
+```
+
+## Error Responses
+
+| HTTP Code | Error Type | Description |
+|-----------|------------|-------------|
+| 401 | Authentication Required | Missing or invalid X-Vendor-ID or X-API-Key |
+| 403 | Forbidden | Insufficient permissions to list webhooks |
+| 500 | Internal Server Error | Server-side error while retrieving webhooks |
+
+<Info>
+  See the [Error Handling Guide](/guides/error-handling) for details on handling these errors.
+</Info>
+
+## Example Requests
+
 <CodeGroup>
-  <div>
+  <CodeGroup.Tab title="cURL">
     ```bash
     # Replace YOUR_VENDOR_ID and YOUR_API_KEY
     curl -X GET "https://api.fikisha.app/v1/webhooks?includeInactive=true" \
-    -H "Accept: application/json" \
-    -H "X-Vendor-ID: YOUR_VENDOR_ID" \
-    -H "X-API-Key: YOUR_API_KEY"
+      -H "Accept: application/json" \
+      -H "X-Vendor-ID: YOUR_VENDOR_ID" \
+      -H "X-API-Key: YOUR_API_KEY"
     ```
-  </div>
-  <div>
+  </CodeGroup.Tab>
+  <CodeGroup.Tab title="JavaScript">
     ```javascript
     const axios = require('axios');
-async function listWebhooks(includeInactive = false) {
-  const url = 'https://api.fikisha.app/v1/webhooks';
-  const headers = {
-    'Accept': 'application/json',
-    'X-Vendor-ID': 'YOUR_VENDOR_ID', // Replace with your Vendor ID
-    'X-API-Key': 'YOUR_API_KEY'   // Replace with your API Key
-  };
-  const params = { includeInactive };
 
-  try {
-    const response = await axios.get(url, { headers, params });
-    console.log(`Retrieved ${response.data.data.webhooks.length} webhooks`);
-    return response.data.data.webhooks;
-  } catch (error) {
-    console.error('API Error:', error.response ? error.response.data : error.message);
-    throw error;
-  }
-}
+    async function listWebhooks(includeInactive = false) {
+      const url = 'https://api.fikisha.app/v1/webhooks';
+      const headers = {
+        'Accept': 'application/json',
+        'X-Vendor-ID': 'YOUR_VENDOR_ID', // Replace with your Vendor ID
+        'X-API-Key': 'YOUR_API_KEY'   // Replace with your API Key
+      };
+      const params = { includeInactive };
 
-// Example: Get all webhooks including inactive ones
-listWebhooks(true);
-````
+      try {
+        const response = await axios.get(url, { headers, params });
+        console.log(`Retrieved ${response.data.data.webhooks.length} webhooks`);
+        return response.data.data.webhooks;
+      } catch (error) {
+        console.error('API Error:', error.response ? error.response.data : error.message);
+        throw error;
+      }
+    }
 
-  </div>
-  <div>
+    // Example: List all webhooks including inactive ones
+    listWebhooks(true).then(webhooks => {
+      webhooks.forEach(webhook => {
+        console.log(`Webhook ${webhook.id}: ${webhook.url}`);
+        console.log(`Status: ${webhook.isActive ? 'Active' : 'Inactive'}`);
+        console.log(`Success Rate: ${webhook.deliveryStats.successRate}%`);
+      });
+    });
+    ```
+  </CodeGroup.Tab>
+  <CodeGroup.Tab title="Python">
     ```python
     import requests
-def list_webhooks(include_inactive=False):
-    url = 'https://api.fikisha.app/v1/webhooks'
-    headers = {
-        'Accept': 'application/json',
-        'X-Vendor-ID': 'YOUR_VENDOR_ID', # Replace with your Vendor ID
-        'X-API-Key': 'YOUR_API_KEY'   # Replace with your API Key
-    }
-    params = {'includeInactive': 'true' if include_inactive else 'false'}
 
-    try:
-        response = requests.get(url, headers=headers, params=params)
-        response.raise_for_status()  # Raise exception for HTTP errors
-        data = response.json()
-        print(f"Retrieved {len(data['data']['webhooks'])} webhooks")
-        return data['data']['webhooks']
-    except requests.exceptions.RequestException as e:
-        print(f'API Error: {e}')
-        if hasattr(e, 'response') and e.response is not None:
-            print(f'Status Code: {e.response.status_code}')
-            print(f'Response Text: {e.response.text}')
-        raise e
+    def list_webhooks(include_inactive=False):
+        url = 'https://api.fikisha.app/v1/webhooks'
+        headers = {
+            'Accept': 'application/json',
+            'X-Vendor-ID': 'YOUR_VENDOR_ID', # Replace with your Vendor ID
+            'X-API-Key': 'YOUR_API_KEY'   # Replace with your API Key
+        }
+        params = {'includeInactive': include_inactive}
 
-# Example: Get all webhooks including inactive ones
+        try:
+            response = requests.get(url, headers=headers, params=params)
+            response.raise_for_status()
+            data = response.json()
+            print(f"Retrieved {len(data['data']['webhooks'])} webhooks")
+            return data['data']['webhooks']
+        except requests.exceptions.RequestException as e:
+            print(f'API Error: {e}')
+            if hasattr(e, 'response') and e.response is not None:
+                print(f'Status Code: {e.response.status_code}')
+                print(f'Response Text: {e.response.text}')
+            raise e
 
-list_webhooks(include_inactive=True)
-
-```
-  </div>
+    # Example: List all webhooks including inactive ones
+    webhooks = list_webhooks(True)
+    for webhook in webhooks:
+        print(f"Webhook {webhook['id']}: {webhook['url']}")
+        print(f"Status: {'Active' if webhook['isActive'] else 'Inactive'}")
+        print(f"Success Rate: {webhook['deliveryStats']['successRate']}%")
+    ```
+  </CodeGroup.Tab>
 </CodeGroup>
-<Info>
-  The delivery statistics provide a quick overview of each webhook's reliability. If you notice a webhook with a low success rate, you may want to check for issues with your endpoint or update the webhook URL.
-</Info>
+
+## Next Steps
+
+<CardGroup col={2}>
+  <Card title="Configure Webhooks" icon="settings" href="/api-reference/webhooks/configure-webhooks">
+    Learn how to configure new webhooks.
+  </Card>
+  <Card title="List Webhook Deliveries" icon="clock" href="/api-reference/webhooks/list-webhook-deliveries">
+    Check the delivery status of webhook events.
+  </Card>
+  <Card title="Error Handling" icon="bug" href="/guides/error-handling">
+    Learn about error responses and handling.
+  </Card>
+  <Card title="Testing" icon="flask" href="/guides/testing">
+    Learn how to test your webhook integration.
+  </Card>
+</CardGroup>
 ```
