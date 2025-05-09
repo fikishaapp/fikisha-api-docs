@@ -1,0 +1,260 @@
+---
+title: 'Get Available Products'
+api: 'GET https://api.fikisha.app/v1/products'
+description: 'Retrieve a list of available products for your region with filtering options.'
+---
+
+import { ParamField, ResponseField, Expandable, CodeGroup } from 'mintlify/components';
+
+# Get Available Products
+
+Retrieves a list of available products that can be sold through your vendor account. Products are filtered based on your vendor profile's default region and active status. This endpoint is useful for populating product catalogs in your custom applications.
+
+## Authentication
+
+This endpoint requires **API Key Authentication**. Include your `X-Vendor-ID` and `X-API-Key` in the HTTP request headers.
+
+```http
+GET /v1/products HTTP/1.1
+Host: api.fikisha.app # Replace with actual host
+X-Vendor-ID: YOUR_VENDOR_ID_HERE
+X-API-Key: YOUR_SECRET_API_KEY_HERE
+Accept: application/json
+```
+
+See the [Authentication Guide](/authentication) for details.
+
+## Query Parameters
+
+<ParamField query="category" type="string">
+  *(Optional)* Filter products by category name.
+</ParamField>
+
+<ParamField query="stockStatus" type="string">
+  *(Optional)* Filter products by stock status. Allowed values:
+  - `available`
+  - `low`
+  - `out_of_stock`
+</ParamField>
+
+<ParamField query="minPrice" type="number">
+  *(Optional)* Filter products with price greater than or equal to this value.
+</ParamField>
+
+<ParamField query="maxPrice" type="number">
+  *(Optional)* Filter products with price less than or equal to this value.
+</ParamField>
+
+<ParamField query="limit" type="integer">
+  *(Optional)* Maximum number of products to return.
+  - Default: `50`
+  - Maximum: `100`
+</ParamField>
+
+## Response (200 OK)
+
+<ResponseField name="success" type="boolean" required>
+  Indicates if the request was successful (`true`).
+</ResponseField>
+
+<ResponseField name="products" type="array" required>
+  An array of product objects matching the query criteria. The array may be empty if no products match the criteria.
+</ResponseField>
+
+### Product Object Structure
+
+<ResponseField name="id" type="string" required>
+  Unique identifier for the product.
+</ResponseField>
+
+<ResponseField name="name" type="string" required>
+  The product name.
+</ResponseField>
+
+<ResponseField name="description" type="string">
+  *(Optional)* Product description.
+</ResponseField>
+
+<ResponseField name="category" type="string" required>
+  The product category.
+</ResponseField>
+
+<ResponseField name="price" type="number" required>
+  The product price in KES.
+</ResponseField>
+
+<ResponseField name="hasVariableAmount" type="boolean" required>
+  Indicates if the product has a variable amount (e.g., for utility payments).
+</ResponseField>
+
+<ResponseField name="minAmount" type="number">
+  *(Optional, if hasVariableAmount is true)* Minimum allowed amount for variable pricing.
+</ResponseField>
+
+<ResponseField name="maxAmount" type="number">
+  *(Optional, if hasVariableAmount is true)* Maximum allowed amount for variable pricing.
+</ResponseField>
+
+<ResponseField name="provider" type="string" required>
+  The provider or brand of the product.
+</ResponseField>
+
+<ResponseField name="imageUrl" type="string">
+  *(Optional)* URL to the product image.
+</ResponseField>
+
+<ResponseField name="stockStatus" type="string" required>
+  Current stock status: `available`, `low`, or `out_of_stock`.
+</ResponseField>
+
+<ResponseField name="isActive" type="boolean" required>
+  Whether the product is currently active and available for sale.
+</ResponseField>
+
+<ResponseField name="currentStock" type="number" required>
+  Current available stock quantity.
+</ResponseField>
+
+<ResponseField name="commissionRate" type="number" required>
+  The commission rate percentage for selling this product.
+</ResponseField>
+
+<ResponseField name="availableRegions" type="array" required>
+  Array of region codes where this product is available.
+</ResponseField>
+
+### Example Response
+
+```json
+{
+  "success": true,
+  "products": [
+    {
+      "id": "prod_12345",
+      "name": "Premium Smartphone",
+      "description": "High-end smartphone with advanced features",
+      "category": "electronics",
+      "price": 25000,
+      "hasVariableAmount": false,
+      "provider": "TechBrand",
+      "imageUrl": "https://example.com/images/smartphone.jpg",
+      "stockStatus": "available",
+      "isActive": true,
+      "currentStock": 15,
+      "commissionRate": 5.0,
+      "availableRegions": ["KE", "UG", "TZ"]
+    },
+    {
+      "id": "prod_67890",
+      "name": "Power Bank",
+      "description": "10000mAh portable power bank",
+      "category": "electronics",
+      "price": 1500,
+      "hasVariableAmount": false,
+      "provider": "PowerTech",
+      "imageUrl": "https://example.com/images/powerbank.jpg",
+      "stockStatus": "low",
+      "isActive": true,
+      "currentStock": 3,
+      "commissionRate": 8.0,
+      "availableRegions": ["KE", "UG", "TZ", "RW"]
+    }
+    // More products...
+  ]
+}
+```
+
+## Empty Results Response
+
+```json
+{
+  "success": true,
+  "products": []
+}
+```
+
+## Possible Errors
+
+| HTTP Code | Error Code (code) | Description |
+| --------- | ----------------- | ----------- |
+| 400 | invalid-argument | Invalid query parameters (e.g., negative price values). |
+| 401 | unauthenticated | Missing or invalid X-Vendor-ID or X-API-Key. |
+| 429 | rate-limit-exceeded | Too many requests. Implement backoff strategy. |
+| 500 | internal | Server-side error while retrieving products. |
+
+## Example (cURL Request)
+
+```bash
+# Replace YOUR_API_HOST, YOUR_VENDOR_ID, YOUR_API_KEY
+curl -X GET "https://YOUR_API_HOST/v1/products?category=electronics&stockStatus=available" \
+-H "Accept: application/json" \
+-H "X-Vendor-ID: YOUR_VENDOR_ID" \
+-H "X-API-Key: YOUR_API_KEY"
+```
+
+## Example (JavaScript)
+
+```javascript
+const axios = require('axios');
+
+async function getProducts(params = {}) {
+  const url = 'https://YOUR_API_HOST/v1/products'; // Replace
+  const headers = {
+    'Accept': 'application/json',
+    'X-Vendor-ID': 'YOUR_VENDOR_ID', // Replace
+    'X-API-Key': 'YOUR_API_KEY'   // Replace
+  };
+
+  try {
+    const response = await axios.get(url, { headers, params });
+    console.log(`Retrieved ${response.data.products.length} products`);
+    return response.data;
+  } catch (error) {
+    console.error('API Error:', error.response ? error.response.data : error.message);
+    throw error;
+  }
+}
+
+// Example Usage with filters
+// getProducts({
+//   category: 'electronics',
+//   stockStatus: 'available',
+//   minPrice: 1000,
+//   maxPrice: 10000
+// });
+```
+
+## Example (Python)
+
+```python
+import requests
+
+def get_products(params=None):
+    url = 'https://YOUR_API_HOST/v1/products' # Replace
+    headers = {
+        'Accept': 'application/json',
+        'X-Vendor-ID': 'YOUR_VENDOR_ID', # Replace
+        'X-API-Key': 'YOUR_API_KEY'   # Replace
+    }
+
+    try:
+        response = requests.get(url, headers=headers, params=params)
+        response.raise_for_status() # Raise HTTPError for bad responses
+        data = response.json()
+        print(f"Retrieved {len(data.get('products', []))} products")
+        return data
+    except requests.exceptions.RequestException as e:
+        print(f'API Error: {e}')
+        if e.response is not None:
+            print(f'Status Code: {e.response.status_code}')
+            print(f'Response Text: {e.response.text}')
+        raise e
+
+# Example Usage with filters
+# get_products({
+#   'category': 'electronics',
+#   'stockStatus': 'available',
+#   'minPrice': 1000,
+#   'maxPrice': 10000
+# })
+```

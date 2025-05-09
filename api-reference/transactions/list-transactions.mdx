@@ -1,0 +1,342 @@
+---
+title: 'List Transactions'
+api: 'GET https://api.fikisha.app/v1/transactions'
+description: 'Retrieve a paginated list of transactions with filtering options.'
+---
+
+import {
+  ParamField,
+  ResponseField,
+  Expandable,
+  CodeGroup,
+  Info,
+} from "mintlify/components";
+
+# List Transactions
+
+Retrieves a paginated list of transactions initiated through your vendor account. This endpoint supports various filtering options to help you monitor and manage your transaction history.
+
+## Authentication
+
+This endpoint requires **API Key Authentication**. Include your `X-Vendor-ID` and `X-API-Key` in the HTTP request headers.
+
+````http
+GET /v1/transactions?page=1&pageSize=10&type=airtime HTTP/1.1
+Host: api.fikisha.app
+X-Vendor-ID: YOUR_VENDOR_ID_HERE
+X-API-Key: YOUR_SECRET_API_KEY_HERE
+Accept: application/json
+See the Authentication Guide for details.
+Query Parameters
+<ParamField query="page" type="integer">
+  *(Optional)* Page number for pagination.
+  - Default: `1`
+</ParamField>
+<ParamField query="pageSize" type="integer">
+  *(Optional)* Number of transactions to return per page.
+  - Default: `20`
+  - Maximum: `100`
+</ParamField>
+<ParamField query="type" type="string">
+  *(Optional)* Filter by transaction type. Allowed values:
+  - `airtime` - Airtime transactions
+  - `mobiledata` - Data bundle transactions
+  - `sale` - General sales transactions
+</ParamField>
+<ParamField query="status" type="string">
+  *(Optional)* Filter by transaction status. Allowed values:
+  - `pending` - Transaction is being processed
+  - `completed` - Transaction has completed successfully
+  - `failed` - Transaction has failed
+</ParamField>
+<ParamField query="phoneNumber" type="string">
+  *(Optional)* Filter by recipient phone number.
+</ParamField>
+<ParamField query="provider" type="string">
+  *(Optional)* Filter by mobile network provider (e.g., `safaricom`, `airtel`, `telkom`).
+</ParamField>
+<ParamField query="startDate" type="string">
+  *(Optional)* Filter transactions on or after this date. Format: ISO 8601 (e.g., `2024-01-01T00:00:00Z`).
+</ParamField>
+<ParamField query="endDate" type="string">
+  *(Optional)* Filter transactions on or before this date. Format: ISO 8601 (e.g., `2024-01-31T23:59:59Z`).
+</ParamField>
+<ParamField query="clientRef" type="string">
+  *(Optional)* Filter by the client reference provided when creating the transaction.
+</ParamField>
+Response (200 OK)
+<ResponseField name="success" type="boolean" required>
+  Indicates if the request was successful (`true`).
+</ResponseField>
+<ResponseField name="data" type="object" required>
+  Contains the transaction list and pagination information.
+  <Expandable>
+    <ResponseField name="transactions" type="array" required>
+      An array of transaction objects matching the query criteria, ordered by creation date descending (newest first).
+    </ResponseField>
+<ResponseField name="pagination" type="object" required>
+  Pagination metadata.
+
+  <Expandable>
+    <ResponseField name="totalItems" type="integer" required>
+      Total number of transactions matching the filter criteria.
+    </ResponseField>
+
+    <ResponseField name="currentPage" type="integer" required>
+      The current page number.
+    </ResponseField>
+
+    <ResponseField name="pageSize" type="integer" required>
+      Number of items per page.
+    </ResponseField>
+
+    <ResponseField name="totalPages" type="integer" required>
+      Total number of pages available with the current pageSize.
+    </ResponseField>
+
+    <ResponseField name="hasNextPage" type="boolean" required>
+      Indicates if there are more pages after the current one.
+    </ResponseField>
+
+    <ResponseField name="hasPreviousPage" type="boolean" required>
+      Indicates if there are pages before the current one.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+  </Expandable>
+</ResponseField>
+Transaction Object Structure
+Each transaction object in the response contains a set of common fields and type-specific fields depending on the transaction type:
+<Expandable title="Common Transaction Fields (All Types)">
+  <ResponseField name="id" type="string" required>
+    The unique transaction ID.
+  </ResponseField>
+  <ResponseField name="type" type="string" required>
+    The transaction type (e.g., `airtime`, `mobiledata`, `sale`).
+  </ResponseField>
+  <ResponseField name="status" type="string" required>
+    Current status of the transaction (e.g., `pending`, `completed`, `failed`).
+  </ResponseField>
+  <ResponseField name="amount" type="number" required>
+    The transaction amount.
+  </ResponseField>
+  <ResponseField name="clientRef" type="string">
+    *(Optional)* Your reference string if provided in the original request.
+  </ResponseField>
+  <ResponseField name="createdAt" type="string" required>
+    ISO 8601 timestamp of when the transaction was created.
+  </ResponseField>
+  <ResponseField name="updatedAt" type="string" required>
+    ISO 8601 timestamp of when the transaction was last updated.
+  </ResponseField>
+  <ResponseField name="completedAt" type="string">
+    *(Optional)* ISO 8601 timestamp of when the transaction was completed. Only present for completed transactions.
+  </ResponseField>
+  <ResponseField name="failureReason" type="string">
+    *(Optional)* Description of the failure reason if status is `failed`.
+  </ResponseField>
+</Expandable>
+<Expandable title="Airtime-Specific Fields">
+  <ResponseField name="phoneNumber" type="string" required>
+    The recipient's phone number.
+  </ResponseField>
+  <ResponseField name="provider" type="string" required>
+    The network provider code (e.g., `safaricom`, `airtel`).
+  </ResponseField>
+  <ResponseField name="saleType" type="string" required>
+    The type of airtime transaction (e.g., `direct_airtime`, `pin_airtime`).
+  </ResponseField>
+  <ResponseField name="pin" type="string">
+    *(Optional)* The generated airtime PIN if the status is `completed` and the saleType is `pin_airtime`.
+  </ResponseField>
+</Expandable>
+<Expandable title="Data Bundle-Specific Fields">
+  <ResponseField name="phoneNumber" type="string" required>
+    The recipient's phone number.
+  </ResponseField>
+  <ResponseField name="provider" type="string" required>
+    The network provider code.
+  </ResponseField>
+  <ResponseField name="bundleId" type="string" required>
+    The ID of the data bundle.
+  </ResponseField>
+  <ResponseField name="bundleName" type="string">
+    *(Optional)* The name of the data bundle if available.
+  </ResponseField>
+</Expandable>
+<Expandable title="Sale-Specific Fields">
+  <ResponseField name="productId" type="string">
+    *(Optional)* The ID of the product sold.
+  </ResponseField>
+  <ResponseField name="productName" type="string">
+    *(Optional)* The name of the product sold.
+  </ResponseField>
+  <ResponseField name="quantity" type="number">
+    *(Optional)* The quantity of products sold.
+  </ResponseField>
+  <ResponseField name="metadata" type="object">
+    *(Optional)* Additional metadata about the sale.
+  </ResponseField>
+</Expandable>
+Example Response
+json{
+  "success": true,
+  "data": {
+    "transactions": [
+      {
+        "id": "txn_123456",
+        "type": "airtime",
+        "status": "completed",
+        "amount": 100,
+        "phoneNumber": "+254712345678",
+        "provider": "safaricom",
+        "saleType": "direct_airtime",
+        "clientRef": "air-req-001",
+        "createdAt": "2024-04-15T12:30:00Z",
+        "updatedAt": "2024-04-15T12:31:00Z",
+        "completedAt": "2024-04-15T12:31:00Z"
+      },
+      {
+        "id": "txn_123457",
+        "type": "mobiledata",
+        "status": "completed",
+        "amount": 250,
+        "phoneNumber": "+254723456789",
+        "provider": "airtel",
+        "bundleId": "weekly_2gb",
+        "bundleName": "Weekly 2GB",
+        "clientRef": "data-req-001",
+        "createdAt": "2024-04-15T11:45:00Z",
+        "updatedAt": "2024-04-15T11:46:30Z",
+        "completedAt": "2024-04-15T11:46:30Z"
+      },
+      {
+        "id": "txn_123458",
+        "type": "airtime",
+        "status": "failed",
+        "amount": 50,
+        "phoneNumber": "+254734567890",
+        "provider": "telkom",
+        "saleType": "pin_airtime",
+        "clientRef": "air-req-002",
+        "createdAt": "2024-04-15T10:20:00Z",
+        "updatedAt": "2024-04-15T10:21:15Z",
+        "failureReason": "Invalid phone number format"
+      }
+    ],
+    "pagination": {
+      "totalItems": 103,
+      "currentPage": 1,
+      "pageSize": 10,
+      "totalPages": 11,
+      "hasNextPage": true,
+      "hasPreviousPage": false
+    }
+  }
+}
+Empty Results Response
+json{
+  "success": true,
+  "data": {
+    "transactions": [],
+    "pagination": {
+      "totalItems": 0,
+      "currentPage": 1,
+      "pageSize": 10,
+      "totalPages": 0,
+      "hasNextPage": false,
+      "hasPreviousPage": false
+    }
+  }
+}
+Possible Errors
+HTTP CodeError TypeDescription400Invalid RequestInvalid query parameters (e.g., invalid status value, date format).401Authentication RequiredMissing or invalid X-Vendor-ID or X-API-Key.429Too Many RequestsRate limit exceeded.500Internal Server ErrorServer-side error while retrieving transaction history.
+See the Error Handling Guide for details.
+Example (Fetch Airtime Transactions)
+<CodeGroup>
+  <div>
+    ```bash
+    # Replace YOUR_VENDOR_ID and YOUR_API_KEY
+    curl -X GET "https://api.fikisha.app/v1/transactions?page=1&pageSize=10&type=airtime&status=completed&startDate=2024-01-01T00:00:00Z&endDate=2024-01-31T23:59:59Z" \
+    -H "Accept: application/json" \
+    -H "X-Vendor-ID: YOUR_VENDOR_ID" \
+    -H "X-API-Key: YOUR_API_KEY"
+    ```
+  </div>
+  <div>
+    ```javascript
+    const axios = require('axios');
+async function listTransactions(params = {}) {
+  const url = 'https://api.fikisha.app/v1/transactions';
+  const headers = {
+    'Accept': 'application/json',
+    'X-Vendor-ID': 'YOUR_VENDOR_ID', // Replace with your Vendor ID
+    'X-API-Key': 'YOUR_API_KEY'   // Replace with your API Key
+  };
+
+  try {
+    const response = await axios.get(url, { headers, params });
+    console.log(`Retrieved ${response.data.data.transactions.length} transactions`);
+    console.log(`Total available: ${response.data.data.pagination.totalItems}`);
+    return response.data.data;
+  } catch (error) {
+    console.error('API Error:', error.response ? error.response.data : error.message);
+    throw error;
+  }
+}
+
+// Example: Get completed airtime transactions for January 2024
+listTransactions({
+  page: 1,
+  pageSize: 10,
+  type: 'airtime',
+  status: 'completed',
+  startDate: '2024-01-01T00:00:00Z',
+  endDate: '2024-01-31T23:59:59Z'
+});
+````
+
+  </div>
+  <div>
+    ```python
+    import requests
+def list_transactions(params=None):
+    url = 'https://api.fikisha.app/v1/transactions'
+    headers = {
+        'Accept': 'application/json',
+        'X-Vendor-ID': 'YOUR_VENDOR_ID', # Replace with your Vendor ID
+        'X-API-Key': 'YOUR_API_KEY'   # Replace with your API Key
+    }
+
+    try:
+        response = requests.get(url, headers=headers, params=params)
+        response.raise_for_status()  # Raise exception for HTTP errors
+        data = response.json()
+        print(f"Retrieved {len(data['data']['transactions'])} transactions")
+        print(f"Total available: {data['data']['pagination']['totalItems']}")
+        return data['data']
+    except requests.exceptions.RequestException as e:
+        print(f'API Error: {e}')
+        if hasattr(e, 'response') and e.response is not None:
+            print(f'Status Code: {e.response.status_code}')
+            print(f'Response Text: {e.response.text}')
+        raise e
+
+# Example: Get completed airtime transactions for January 2024
+
+list_transactions({
+'page': 1,
+'pageSize': 10,
+'type': 'airtime',
+'status': 'completed',
+'startDate': '2024-01-01T00:00:00Z',
+'endDate': '2024-01-31T23:59:59Z'
+})
+
+```
+  </div>
+</CodeGroup>
+<Info>
+  For efficient data retrieval, only request the information you need by using appropriate filters. This reduces response size and improves performance.
+</Info>
+```

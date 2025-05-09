@@ -1,13 +1,13 @@
 ---
 title: 'Introduction'
-description: 'Welcome to the Fikisha Vendor API documentation. Integrate airtime, data, and more via HTTP endpoints.'
+description: 'Welcome to the Fikisha Vendor API documentation. Integrate airtime, data, campaigns, and more via HTTP endpoints.'
 ---
 
 import { Card, CardGroup, Icon, Info } from 'mintlify/components';
 
 # Fikisha Vendor API
 
-Welcome! This documentation provides everything you need to integrate the Fikisha Vendor API into your backend applications or services. Empower your platform by programmatically initiating the sale of digital products like airtime and data bundles using secure HTTP requests.
+Welcome! This documentation provides everything you need to integrate the Fikisha Vendor API into your backend applications or services. Empower your platform by programmatically managing digital products like airtime and data bundles, contact groups, campaigns, and more using secure HTTP requests.
 
 ## Who is this API for?
 
@@ -16,6 +16,7 @@ This API documentation focuses on **server-to-server integrations** and is desig
 -   **Developers** building backend systems, kiosks, agency banking applications, or utility payment platforms that need to trigger Fikisha sales.
 -   **Businesses** looking to automate airtime or data bundle distribution from their own servers.
 -   **Fikisha Vendors** wanting to build custom backend tools or scripts that leverage their accounts.
+-   **Marketing teams** creating and managing promotional campaigns through the API.
 
 <Info>
   If you are building a client-side application (like the official Fikisha Vendor Mobile App or Web Portal), you will likely interact with the backend via **Firebase Callable Functions** using the Firebase SDKs, which handle user authentication automatically. This documentation primarily covers the **HTTP Endpoints** secured by API Keys.
@@ -25,28 +26,29 @@ This API documentation focuses on **server-to-server integrations** and is desig
 
 Using the Fikisha Vendor API endpoints, your server can:
 
--   <Icon name="paper-plane" color="#F7924F" /> **Initiate Airtime Sales:** Request direct top-ups or PIN generation via the `/sales/initiate` endpoint.
--   <Icon name="wifi" color="#F7924F" /> **Initiate Data Bundle Sales:** Request specific data bundles via the `/sales/initiate` endpoint.
--   <Icon name="cube" color="#F7924F" /> **Initiate Physical Good Sales:** Trigger fulfillment via the `/sales/initiate` endpoint.
--   <Icon name="wallet" color="#F7924F" /> **Check Wallet Balance:** Retrieve current balance using the `/wallet/balance` endpoint.
--   <Icon name="list-ul" color="#F7924F" /> **Get Wallet Transactions:** Fetch transaction history using the `/wallet/transactions` endpoint.
--   <Icon name="list" color="#F7924F" /> **List Data Bundles:** Retrieve available data bundles using the `/data/bundles` endpoint (conceptual).
--   <Icon name="arrow-up-from-dotted-line" color="#F7924F" /> **Initiate Withdrawals (Future):** Programmatically request wallet withdrawals (Endpoint TBD).
+-   <Icon name="paper-plane" color="#F7924F" /> **Manage Airtime:** Create and track airtime transactions via the `/v1/airtime` endpoint.
+-   <Icon name="wifi" color="#F7924F" /> **Manage Data Bundles:** Process mobile data bundles via the `/v1/mobiledata` endpoint.
+-   <Icon name="address-book" color="#F7924F" /> **Manage Contacts:** Create contact groups and manage contacts with the `/v1/contact-groups` endpoints.
+-   <Icon name="bullhorn" color="#F7924F" /> **Run Campaigns:** Create and monitor marketing campaigns with the `/v1/campaigns` endpoints.
+-   <Icon name="cart-shopping" color="#F7924F" /> **Process Sales:** Manage sales operations with the `/v1/sales` endpoints.
+-   <Icon name="clock-rotate-left" color="#F7924F" /> **Track Transactions:** Monitor all transactions using the `/v1/transactions` endpoints.
+-   <Icon name="wallet" color="#F7924F" /> **Manage Wallet:** Check balance and transaction history via the `/v1/wallet` endpoints.
+-   <Icon name="webhook" color="#F7924F" /> **Configure Webhooks:** Set up and monitor webhooks for real-time notifications.
 
 ## How it Works
 
 1.  **Authentication:** Your server authenticates requests using your unique **Vendor ID** and secret **API Key** passed in HTTP headers.
-2.  **Request Initiation:** You send `POST` or `GET` requests to specific Fikisha API endpoints (e.g., `/v1/sales/initiate`, `/v1/wallet/balance`).
-3.  **Asynchronous Processing:** For sales (`/v1/sales/initiate`), Fikisha validates your request and wallet balance, then queues the task. You receive an immediate `202 Accepted` response.
+2.  **Request Initiation:** You send `POST` or `GET` requests to specific Fikisha API endpoints (e.g., `/v1/airtime`, `/v1/wallet/balance`).
+3.  **Asynchronous Processing:** For transaction operations, Fikisha validates your request and wallet balance, then queues the task. You receive an immediate response.
 4.  **Status Updates:** The final outcome (`completed` or `failed`) is communicated asynchronously, ideally via [Webhooks](/guides/webhooks) configured to your server.
 
 ## Getting Started
 
 Ready to integrate?
 
-1.  **Create Account:** Sign up on the [Fikisha Vendor Portal](https://vendor.fikisha.com/signin).
-2.  **Generate Credentials:** Obtain your **Vendor ID** and **API Key** from the [Vendor Dashboard](https://vendor.fikisha.com/dashboard) (API Credentials section). **Keep your API Key secret!**
-3.  **Fund Wallet:** Ensure your vendor wallet has funds via the [Dashboard](https://vendor.fikisha.com/dashboard).
+1.  **Create Account:** Sign up on the [Fikisha Vendor Portal](https://vendor.fikisha.app/signin).
+2.  **Generate Credentials:** Obtain your **Vendor ID** and **API Key** from the [Vendor Dashboard](https://vendor.fikisha.app/dashboard) (API Credentials section). **Keep your API Key secret!**
+3.  **Fund Wallet:** Ensure your vendor wallet has funds via the [Dashboard](https://vendor.fikisha.app/dashboard).
 4.  **Follow the Quickstart:** Make your first API call using our [Quickstart Guide](/quickstart), which focuses on the HTTP endpoint approach.
 
 <CardGroup col={2}>

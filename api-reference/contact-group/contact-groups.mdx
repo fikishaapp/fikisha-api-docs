@@ -1,0 +1,203 @@
+---
+title: 'Create Contact Group'
+api: 'POST https://api.fikisha.app/v1/contact-groups'
+description: 'Create a new contact group for organizing recipients.'
+---
+
+import { ParamField, ResponseField, Expandable, CodeGroup, Info } from 'mintlify/components';
+
+# Create Contact Group
+
+Creates a new contact group within your vendor account. Contact groups enable you to organize phone numbers and related contact information for easy management and targeting in campaigns.
+
+## Authentication
+
+This endpoint requires **API Key Authentication**. Include your `X-Vendor-ID` and `X-API-Key` in the HTTP request headers.
+
+```http
+POST /v1/contact-groups HTTP/1.1
+Host: api.fikisha.app
+Content-Type: application/json
+Accept: application/json
+X-Vendor-ID: YOUR_VENDOR_ID_HERE
+X-API-Key: YOUR_SECRET_API_KEY_HERE
+
+{ ... request body ... }
+See the Authentication Guide for details.
+Request Body
+<ParamField body="name" type="string" required>
+  The name of the contact group. Must be unique within your vendor account. Maximum length: 100 characters.
+</ParamField>
+<ParamField body="description" type="string">
+  *(Optional)* A description of the contact group. Maximum length: 500 characters.
+</ParamField>
+<ParamField body="tags" type="array">
+  *(Optional)* An array of string tags for categorizing the contact group.
+  <Expandable>
+    <ParamField body="[]" type="string">
+      A tag keyword. Maximum length: 50 characters per tag.
+    </ParamField>
+  </Expandable>
+</ParamField>
+<ParamField body="metadata" type="object">
+  *(Optional)* Additional custom metadata for the contact group.
+</ParamField>
+Example Request
+json{
+  "name": "VIP Customers",
+  "description": "Our premium customers who receive special offers",
+  "tags": ["vip", "premium", "loyal"],
+  "metadata": {
+    "region": "Nairobi",
+    "createdBy": "marketing-team"
+  }
+}
+Response (200 OK)
+<ResponseField name="success" type="boolean" required>
+  Indicates if the request was successful (`true`).
+</ResponseField>
+<ResponseField name="data" type="object" required>
+  Contains the created contact group information.
+  <Expandable>
+    <ResponseField name="id" type="string" required>
+      The unique identifier for the newly created contact group.
+    </ResponseField>
+<ResponseField name="name" type="string" required>
+  The name of the contact group.
+</ResponseField>
+
+<ResponseField name="description" type="string">
+  *(Optional)* The description of the contact group.
+</ResponseField>
+
+<ResponseField name="tags" type="array">
+  *(Optional)* Array of tags associated with the contact group.
+</ResponseField>
+
+<ResponseField name="contactCount" type="integer" required>
+  The number of contacts in the group (0 for a new group).
+</ResponseField>
+
+<ResponseField name="createdAt" type="string" required>
+  ISO 8601 timestamp of when the contact group was created.
+</ResponseField>
+
+<ResponseField name="updatedAt" type="string" required>
+  ISO 8601 timestamp of when the contact group was last updated.
+</ResponseField>
+
+<ResponseField name="metadata" type="object">
+  *(Optional)* Additional metadata for the contact group.
+</ResponseField>
+  </Expandable>
+</ResponseField>
+Example Response
+json{
+  "success": true,
+  "data": {
+    "id": "grp_123456",
+    "name": "VIP Customers",
+    "description": "Our premium customers who receive special offers",
+    "tags": ["vip", "premium", "loyal"],
+    "contactCount": 0,
+    "createdAt": "2024-04-16T09:30:00Z",
+    "updatedAt": "2024-04-16T09:30:00Z",
+    "metadata": {
+      "region": "Nairobi",
+      "createdBy": "marketing-team"
+    }
+  }
+}
+Possible Errors
+HTTP CodeError TypeDescription400Invalid RequestMissing required fields or invalid values.401Authentication RequiredMissing or invalid X-Vendor-ID or X-API-Key.409ConflictA contact group with the same name already exists.429Too Many RequestsRate limit exceeded.500Internal Server ErrorServer-side error while creating the contact group.
+See the Error Handling Guide for details.
+Example (cURL)
+bash# Replace YOUR_VENDOR_ID and YOUR_API_KEY
+curl -X POST https://api.fikisha.app/v1/contact-groups \
+  -H "Content-Type: application/json" \
+  -H "Accept: application/json" \
+  -H "X-Vendor-ID: YOUR_VENDOR_ID" \
+  -H "X-API-Key: YOUR_API_KEY" \
+  -d '{
+    "name": "VIP Customers",
+    "description": "Our premium customers who receive special offers",
+    "tags": ["vip", "premium", "loyal"],
+    "metadata": {
+      "region": "Nairobi",
+      "createdBy": "marketing-team"
+    }
+  }'
+<CodeGroup>
+  <div>
+    ```javascript
+    const axios = require('axios');
+async function createContactGroup(groupData) {
+  const url = 'https://api.fikisha.app/v1/contact-groups';
+  const headers = {
+    'Content-Type': 'application/json',
+    'Accept': 'application/json',
+    'X-Vendor-ID': 'YOUR_VENDOR_ID', // Replace with your Vendor ID
+    'X-API-Key': 'YOUR_API_KEY'   // Replace with your API Key
+  };
+
+  try {
+    const response = await axios.post(url, groupData, { headers });
+    console.log('Contact Group Created:', response.data.data.id);
+    return response.data.data;
+  } catch (error) {
+    console.error('API Error:', error.response ? error.response.data : error.message);
+    throw error;
+  }
+}
+
+// Example Usage
+const groupData = {
+  name: "Corporate Clients",
+  description: "Business customers from corporate sector",
+  tags: ["corporate", "business"]
+};
+
+createContactGroup(groupData);
+```
+  </div>
+  <div>
+    ```python
+    import requests
+    import json
+def create_contact_group(group_data):
+    url = 'https://api.fikisha.app/v1/contact-groups'
+    headers = {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'X-Vendor-ID': 'YOUR_VENDOR_ID', # Replace with your Vendor ID
+        'X-API-Key': 'YOUR_API_KEY'   # Replace with your API Key
+    }
+
+    try:
+        response = requests.post(url, headers=headers, json=group_data)
+        response.raise_for_status()  # Raise exception for HTTP errors
+        result = response.json()
+        print(f"Contact Group Created: {result['data']['id']}")
+        return result['data']
+    except requests.exceptions.RequestException as e:
+        print(f'API Error: {e}')
+        if hasattr(e, 'response') and e.response is not None:
+            print(f'Status Code: {e.response.status_code}')
+            print(f'Response Text: {e.response.text}')
+        raise e
+
+# Example Usage
+group_data = {
+    "name": "Corporate Clients",
+    "description": "Business customers from corporate sector",
+    "tags": ["corporate", "business"]
+}
+
+create_contact_group(group_data)
+```
+  </div>
+</CodeGroup>
+<Info>
+  Contact groups can be used to organize recipients for promotional campaigns, broadcast messages, or bulk airtime/data transactions. After creating a group, you can add contacts to it using the [Add Contacts to Group](/api-reference/contacts/add-contacts) endpoint.
+</Info>
+```

@@ -1,0 +1,312 @@
+---
+title: 'Initiate Wallet Top-Up'
+api: 'POST https://api.fikisha.app/v1/wallet/topup'
+description: 'Initiate a wallet top-up transaction with integrated payment processing.'
+---
+
+import { ParamField, ResponseField, Expandable, CodeGroup, Info, Warning } from 'mintlify/components';
+
+# Initiate Wallet Top-Up
+
+Initiates a wallet top-up transaction and provides payment processing details. This endpoint handles the first step in adding funds to your vendor wallet. The actual payment processing is asynchronous, with final status updates provided via webhooks or status polling.
+
+<Warning>
+  This endpoint is for server-to-server integrations. For user-initiated top-ups from the Fikisha Vendor App, use the appropriate in-app functions which handle user authentication automatically.
+</Warning>
+
+## Authentication
+
+This endpoint requires **API Key Authentication**. Include your `X-Vendor-ID` and `X-API-Key` in the HTTP request headers.
+
+```http
+POST /v1/wallet/topup HTTP/1.1
+Host: api.fikisha.app # Replace with actual host
+Content-Type: application/json
+Accept: application/json
+X-Vendor-ID: YOUR_VENDOR_ID_HERE
+X-API-Key: YOUR_SECRET_API_KEY_HERE
+
+{ ... request body ... }
+```
+
+See the [Authentication Guide](/authentication) for details.
+
+## Request Body
+
+<ParamField body="amount" type="number" required>
+  The amount to add to the wallet in KES. Must meet minimum top-up requirements (typically 100 KES or more).
+</ParamField>
+
+<ParamField body="paymentMethod" type="string" required>
+  The payment method to use. Supported values:
+  - `mobile_money` - For M-PESA and other mobile money providers
+  - `card` - For credit/debit card payments
+  - `bank` - For bank transfer payments
+</ParamField>
+
+<ParamField body="phoneNumber" type="string">
+  *(Required for mobile_money)* The phone number to process the mobile money payment from, including country code (e.g., `+254712345678`).
+</ParamField>
+
+<ParamField body="metadata" type="object">
+  *(Optional)* Additional metadata to associate with this top-up transaction.
+</ParamField>
+
+### Example Request (Mobile Money)
+
+```json
+{
+  "amount": 1000,
+  "paymentMethod": "mobile_money",
+  "phoneNumber": "+254712345678"
+}
+```
+
+### Example Request (Card Payment)
+
+```json
+{
+  "amount": 5000,
+  "paymentMethod": "card"
+}
+```
+
+## Response (202 Accepted)
+
+<ResponseField name="success" type="boolean" required>
+  Indicates if the top-up request was successfully initiated (`true`).
+</ResponseField>
+
+<ResponseField name="reference" type="string" required>
+  A unique reference for this top-up transaction. Store this for tracking the transaction status.
+</ResponseField>
+
+<ResponseField name="paymentDetails" type="object" required>
+  Payment processing details specific to the selected payment method.
+  
+  <Expandable title="Mobile Money Payment Details">
+    <ResponseField name="status" type="string" required>
+      Initial payment status, typically `processing`.
+    </ResponseField>
+    
+    <ResponseField name="requestId" type="string" required>
+      The payment gateway request ID.
+    </ResponseField>
+    
+    <ResponseField name="phoneNumber" type="string" required>
+      The phone number the payment is being processed from.
+    </ResponseField>
+    
+    <ResponseField name="instructions" type="string">
+      *(Optional)* Instructions for completing the payment.
+    </ResponseField>
+  </Expandable>
+  
+  <Expandable title="Card Payment Details">
+    <ResponseField name="status" type="string" required>
+      Initial payment status, typically `processing`.
+    </ResponseField>
+    
+    <ResponseField name="requestId" type="string" required>
+      The payment gateway request ID.
+    </ResponseField>
+    
+    <ResponseField name="checkoutUrl" type="string" required>
+      URL to the secure card payment checkout page. Redirect users to this URL to complete payment.
+    </ResponseField>
+    
+    <ResponseField name="expiresAt" type="string">
+      *(Optional)* ISO 8601 timestamp indicating when the checkout session expires.
+    </ResponseField>
+  </Expandable>
+  
+  <Expandable title="Bank Transfer Details">
+    <ResponseField name="status" type="string" required>
+      Initial payment status, typically `processing`.
+    </ResponseField>
+    
+    <ResponseField name="requestId" type="string" required>
+      The payment gateway request ID.
+    </ResponseField>
+    
+    <ResponseField name="accountNumber" type="string" required>
+      Bank account number to transfer funds to.
+    </ResponseField>
+    
+    <ResponseField name="bankName" type="string" required>
+      Name of the bank for the transfer.
+    </ResponseField>
+    
+    <ResponseField name="accountName" type="string" required>
+      Name of the account holder.
+    </ResponseField>
+    
+    <ResponseField name="reference" type="string" required>
+      Reference code to include with the bank transfer.
+    </ResponseField>
+    
+    <ResponseField name="instructions" type="string">
+      *(Optional)* Instructions for completing the bank transfer.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+### Example Response (Mobile Money)
+
+```json
+{
+  "success": true,
+  "reference": "topup_abc123def456",
+  "paymentDetails": {
+    "status": "processing",
+    "requestId": "mpesa_xyz789",
+    "phoneNumber": "+254712345678",
+    "instructions": "You will receive an M-PESA prompt on your phone. Enter your PIN to complete the payment."
+  }
+}
+```
+
+### Example Response (Card Payment)
+
+```json
+{
+  "success": true,
+  "reference": "topup_ghi789jkl012",
+  "paymentDetails": {
+    "status": "processing",
+    "requestId": "card_mno345",
+    "checkoutUrl": "https://payment.example.com/checkout/session_pqr678",
+    "expiresAt": "2023-08-15T11:30:00Z"
+  }
+}
+```
+
+## Monitoring Payment Status
+
+After initiating a top-up, the payment status can be monitored through:
+
+1. **Webhooks (Recommended)**: Configure webhooks to receive `topup.completed` or `topup.failed` events.
+
+2. **Status Polling**: Use the wallet transactions endpoint (`/v1/wallet/transactions`) with filtering to check the status of specific transactions.
+
+<Info>
+  Payment processing time varies by method: mobile money typically takes 5-60 seconds, card payments depend on user action, and bank transfers may take 1-3 business days to reflect.
+</Info>
+
+## Possible Errors
+
+| HTTP Code | Error Code (code) | Description |
+| --------- | ----------------- | ----------- |
+| 400 | invalid-argument | Invalid request parameters (e.g., amount too low, missing required fields). |
+| 401 | unauthenticated | Missing or invalid X-Vendor-ID or X-API-Key. |
+| 403 | permission-denied | Insufficient permissions to perform this operation. |
+| 429 | rate-limit-exceeded | Too many top-up requests in a short period. |
+| 500 | internal | Server-side error during transaction creation. |
+| 502 | bad-gateway | Error communicating with payment processor. |
+| 503 | unavailable | Payment service temporarily unavailable. |
+
+## Example (cURL)
+
+```bash
+# Replace YOUR_API_HOST, YOUR_VENDOR_ID, YOUR_API_KEY
+curl -X POST "https://YOUR_API_HOST/v1/wallet/topup" \
+-H "Content-Type: application/json" \
+-H "Accept: application/json" \
+-H "X-Vendor-ID: YOUR_VENDOR_ID" \
+-H "X-API-Key: YOUR_API_KEY" \
+-d '{
+  "amount": 1000,
+  "paymentMethod": "mobile_money",
+  "phoneNumber": "+254712345678"
+}'
+```
+
+<CodeGroup>
+  <div>
+    ```javascript
+    const axios = require('axios');
+
+    async function initiateWalletTopup(amount, paymentMethod, phoneNumber) {
+      const url = 'https://YOUR_API_HOST/v1/wallet/topup'; // Replace
+      const headers = {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'X-Vendor-ID': 'YOUR_VENDOR_ID', // Replace
+        'X-API-Key': 'YOUR_API_KEY'   // Replace
+      };
+      
+      const data = {
+        amount,
+        paymentMethod,
+        phoneNumber
+      };
+
+      try {
+        const response = await axios.post(url, data, { headers });
+        console.log('Top-up initiated:', response.data);
+        return response.data;
+      } catch (error) {
+        console.error('API Error:', error.response ? error.response.data : error.message);
+        throw error;
+      }
+    }
+
+    // Example Usage
+    // initiateWalletTopup(1000, 'mobile_money', '+254712345678')
+    //   .then(response => {
+    //     console.log('Reference:', response.reference);
+    //     console.log('Payment status:', response.paymentDetails.status);
+    //   });
+    ```
+  </div>
+  <div>
+    ```python
+    import requests
+
+    def initiate_wallet_topup(amount, payment_method, phone_number=None):
+        url = 'https://YOUR_API_HOST/v1/wallet/topup' # Replace
+        headers = {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'X-Vendor-ID': 'YOUR_VENDOR_ID', # Replace
+            'X-API-Key': 'YOUR_API_KEY'   # Replace
+        }
+        
+        data = {
+            'amount': amount,
+            'paymentMethod': payment_method
+        }
+        
+        # Add phone number for mobile money
+        if payment_method == 'mobile_money' and phone_number:
+            data['phoneNumber'] = phone_number
+
+        try:
+            response = requests.post(url, json=data, headers=headers)
+            response.raise_for_status() # Raise HTTPError for bad responses
+            result = response.json()
+            print(f"Top-up initiated: {result['reference']}")
+            return result
+        except requests.exceptions.RequestException as e:
+            print(f'API Error: {e}')
+            if e.response is not None:
+                print(f'Status Code: {e.response.status_code}')
+                print(f'Response Text: {e.response.text}')
+            raise e
+
+    # Example Usage
+    # result = initiate_wallet_topup(1000, 'mobile_money', '+254712345678')
+    # print(f"Payment status: {result['paymentDetails']['status']}")
+    ```
+  </div>
+</CodeGroup>
+
+## Notes on Payment Methods
+
+- **Mobile Money**: Currently supports M-PESA. The user will receive a payment prompt on their phone.
+- **Card Payments**: Returns a checkout URL where the user can securely enter their card details.
+- **Bank Transfers**: Provides bank account details for manual transfer. These may take longer to process and verify.
+
+<Warning>
+  When using the mobile money payment method, ensure the phone number is in the correct format (including country code) and belongs to the account holder who will authorize the payment.
+</Warning>

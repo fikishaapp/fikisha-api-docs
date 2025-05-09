@@ -24,7 +24,7 @@
     {
       "name": "API Reference",
       "icon": "code",
-      "url": "api-reference/overview"
+      "url": "api-reference/api-overview"
     },
     {
       "name": "Support",
@@ -44,19 +44,32 @@
     {
       "group": "API Reference",
       "pages": [
-        "api-reference/overview",
+        "api-reference/api-overview",
         {
           "group": "Airtime",
           "pages": [
-            "api-reference/airtime/request-airtime-delivery",
-            "api-reference/airtime/bulk-request-airtime"
+            "api-reference/airtime/create-airtime"
           ]
         },
         {
           "group": "Data Bundles",
           "pages": [
-            "api-reference/data/list-data-bundles",
-            "api-reference/data/purchase-data-bundle"
+            "api-reference/data/create-data-bundle"
+          ]
+        },
+        {
+          "group": "Sales",
+          "pages": [
+            "api-reference/sales/create-sale",
+            "api-reference/sales/list-sales",
+            "api-reference/sales/get-sale"
+          ]
+        },
+        {
+          "group": "Transactions",
+          "pages": [
+            "api-reference/transactions/list-transactions",
+            "api-reference/transactions/get-transaction"
           ]
         },
         {
@@ -67,9 +80,27 @@
           ]
         },
         {
-          "group": "Sale Requests",
+          "group": "Contacts",
           "pages": [
-            "api-reference/sales/initiate-sale"
+            "api-reference/contacts/create-contact-group",
+            "api-reference/contacts/list-contact-groups",
+            "api-reference/contacts/add-contacts"
+          ]
+        },
+        {
+          "group": "Campaigns",
+          "pages": [
+            "api-reference/campaigns/create-campaign",
+            "api-reference/campaigns/list-campaigns",
+            "api-reference/campaigns/get-campaign"
+          ]
+        },
+        {
+          "group": "Webhooks",
+          "pages": [
+            "api-reference/webhooks/configure-webhook",
+            "api-reference/webhooks/list-webhooks",
+            "api-reference/webhooks/list-webhook-deliveries"
           ]
         }
       ]

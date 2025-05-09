@@ -1,0 +1,378 @@
+---
+title: 'List Campaigns'
+api: 'GET https://api.fikisha.app/v1/campaigns'
+description: 'Retrieve a paginated list of campaigns with filtering options.'
+---
+
+import {
+  ParamField,
+  ResponseField,
+  Expandable,
+  CodeGroup,
+  Info,
+} from "mintlify/components";
+
+# List Campaigns
+
+Retrieves a paginated list of campaigns from your vendor account. This endpoint supports filtering and sorting options to help you efficiently monitor and manage your marketing campaigns.
+
+## Authentication
+
+This endpoint requires **API Key Authentication**. Include your `X-Vendor-ID` and `X-API-Key` in the HTTP request headers.
+
+````http
+GET /v1/campaigns?page=1&pageSize=10&status=completed HTTP/1.1
+Host: api.fikisha.app
+X-Vendor-ID: YOUR_VENDOR_ID_HERE
+X-API-Key: YOUR_SECRET_API_KEY_HERE
+Accept: application/json
+See the Authentication Guide for details.
+Query Parameters
+<ParamField query="page" type="integer">
+  *(Optional)* Page number for pagination.
+  - Default: `1`
+</ParamField>
+<ParamField query="pageSize" type="integer">
+  *(Optional)* Number of campaigns to return per page.
+  - Default: `20`
+  - Maximum: `100`
+</ParamField>
+<ParamField query="status" type="string">
+  *(Optional)* Filter by campaign status. Allowed values:
+  - `pending` - Campaigns being initiated
+  - `scheduled` - Campaigns scheduled for future execution
+  - `running` - Campaigns currently executing
+  - `completed` - Campaigns that have completed successfully
+  - `failed` - Campaigns that failed
+  - `cancelled` - Campaigns that were cancelled
+</ParamField>
+<ParamField query="campaignType" type="string">
+  *(Optional)* Filter by campaign type. Allowed values:
+  - `message` - SMS message campaigns
+  - `airtime` - Airtime distribution campaigns
+  - `data` - Data bundle distribution campaigns
+</ParamField>
+<ParamField query="search" type="string">
+  *(Optional)* Search term to filter campaigns by name.
+</ParamField>
+<ParamField query="sortBy" type="string">
+  *(Optional)* Field to sort the results by. Allowed values:
+  - `createdAt` - Sort by creation date (default)
+  - `scheduledAt` - Sort by scheduled execution date
+  - `name` - Sort by campaign name
+  - `recipientCount` - Sort by number of recipients
+</ParamField>
+<ParamField query="sortOrder" type="string">
+  *(Optional)* Order of sorting. Allowed values:
+  - `asc` - Ascending order
+  - `desc` - Descending order (default)
+</ParamField>
+<ParamField query="startDate" type="string">
+  *(Optional)* Filter campaigns created on or after this date. Format: ISO 8601 (e.g., `2024-01-01T00:00:00Z`).
+</ParamField>
+<ParamField query="endDate" type="string">
+  *(Optional)* Filter campaigns created on or before this date. Format: ISO 8601 (e.g., `2024-01-31T23:59:59Z`).
+</ParamField>
+Response (200 OK)
+<ResponseField name="success" type="boolean" required>
+  Indicates if the request was successful (`true`).
+</ResponseField>
+<ResponseField name="data" type="object" required>
+  Contains the campaign list and pagination information.
+  <Expandable>
+    <ResponseField name="campaigns" type="array" required>
+      An array of campaign objects.
+  <Expandable>
+    <ResponseField name="id" type="string" required>
+      The unique identifier for the campaign.
+    </ResponseField>
+
+    <ResponseField name="name" type="string" required>
+      The name of the campaign.
+    </ResponseField>
+
+    <ResponseField name="campaignType" type="string" required>
+      The type of campaign (e.g., `message`, `airtime`, `data`).
+    </ResponseField>
+
+    <ResponseField name="status" type="string" required>
+      The current status of the campaign.
+    </ResponseField>
+
+    <ResponseField name="recipientCount" type="integer" required>
+      The number of recipients targeted by the campaign.
+    </ResponseField>
+
+    <ResponseField name="progress" type="object" required>
+      Progress information for the campaign.
+
+      <Expandable>
+        <ResponseField name="processed" type="integer" required>
+          Number of recipients processed so far.
+        </ResponseField>
+
+        <ResponseField name="successful" type="integer" required>
+          Number of successful deliveries.
+        </ResponseField>
+
+        <ResponseField name="failed" type="integer" required>
+          Number of failed deliveries.
+        </ResponseField>
+
+        <ResponseField name="pending" type="integer" required>
+          Number of pending deliveries.
+        </ResponseField>
+
+        <ResponseField name="percentComplete" type="number" required>
+          Percentage of completion (0-100).
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+
+    <ResponseField name="cost" type="object" required>
+      Cost information for the campaign.
+
+      <Expandable>
+        <ResponseField name="estimatedTotal" type="number" required>
+          The estimated total cost of the campaign.
+        </ResponseField>
+
+        <ResponseField name="actualTotal" type="number">
+          *(Optional)* The actual total cost incurred so far.
+        </ResponseField>
+
+        <ResponseField name="currency" type="string" required>
+          The currency of the cost (e.g., `KES`).
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+
+    <ResponseField name="createdAt" type="string" required>
+      ISO 8601 timestamp of when the campaign was created.
+    </ResponseField>
+
+    <ResponseField name="scheduledAt" type="string">
+      *(Optional)* ISO 8601 timestamp of when the campaign was/is scheduled to start.
+    </ResponseField>
+
+    <ResponseField name="completedAt" type="string">
+      *(Optional)* ISO 8601 timestamp of when the campaign completed.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="pagination" type="object" required>
+  Pagination metadata.
+
+  <Expandable>
+    <ResponseField name="totalItems" type="integer" required>
+      Total number of campaigns matching the filter criteria.
+    </ResponseField>
+
+    <ResponseField name="currentPage" type="integer" required>
+      The current page number.
+    </ResponseField>
+
+    <ResponseField name="pageSize" type="integer" required>
+      Number of items per page.
+    </ResponseField>
+
+    <ResponseField name="totalPages" type="integer" required>
+      Total number of pages available with the current pageSize.
+    </ResponseField>
+
+    <ResponseField name="hasNextPage" type="boolean" required>
+      Indicates if there are more pages after the current one.
+    </ResponseField>
+
+    <ResponseField name="hasPreviousPage" type="boolean" required>
+      Indicates if there are pages before the current one.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+  </Expandable>
+</ResponseField>
+Example Response
+json{
+  "success": true,
+  "data": {
+    "campaigns": [
+      {
+        "id": "camp_123456",
+        "name": "New Year Promotion",
+        "campaignType": "message",
+        "status": "completed",
+        "recipientCount": 125,
+        "progress": {
+          "processed": 125,
+          "successful": 120,
+          "failed": 5,
+          "pending": 0,
+          "percentComplete": 100
+        },
+        "cost": {
+          "estimatedTotal": 125.00,
+          "actualTotal": 122.50,
+          "currency": "KES"
+        },
+        "createdAt": "2023-12-20T15:30:00Z",
+        "scheduledAt": "2024-01-01T00:00:00Z",
+        "completedAt": "2024-01-01T00:15:30Z"
+      },
+      {
+        "id": "camp_123457",
+        "name": "Customer Appreciation Airtime",
+        "campaignType": "airtime",
+        "status": "running",
+        "recipientCount": 500,
+        "progress": {
+          "processed": 325,
+          "successful": 320,
+          "failed": 5,
+          "pending": 175,
+          "percentComplete": 65
+        },
+        "cost": {
+          "estimatedTotal": 25000.00,
+          "actualTotal": 16000.00,
+          "currency": "KES"
+        },
+        "createdAt": "2024-04-19T10:00:00Z",
+        "scheduledAt": "2024-04-20T09:00:00Z",
+        "completedAt": null
+      },
+      {
+        "id": "camp_123458",
+        "name": "Weekly Data Bundle Rewards",
+        "campaignType": "data",
+        "status": "scheduled",
+        "recipientCount": 78,
+        "progress": {
+          "processed": 0,
+          "successful": 0,
+          "failed": 0,
+          "pending": 78,
+          "percentComplete": 0
+        },
+        "cost": {
+          "estimatedTotal": 19500.00,
+          "actualTotal": 0,
+          "currency": "KES"
+        },
+        "createdAt": "2024-04-18T14:30:00Z",
+        "scheduledAt": "2024-04-22T08:00:00Z",
+        "completedAt": null
+      }
+    ],
+    "pagination": {
+      "totalItems": 12,
+      "currentPage": 1,
+      "pageSize": 10,
+      "totalPages": 2,
+      "hasNextPage": true,
+      "hasPreviousPage": false
+    }
+  }
+}
+Empty Results Response
+json{
+  "success": true,
+  "data": {
+    "campaigns": [],
+    "pagination": {
+      "totalItems": 0,
+      "currentPage": 1,
+      "pageSize": 10,
+      "totalPages": 0,
+      "hasNextPage": false,
+      "hasPreviousPage": false
+    }
+  }
+}
+Possible Errors
+HTTP CodeError TypeDescription400Invalid RequestInvalid query parameters.401Authentication RequiredMissing or invalid X-Vendor-ID or X-API-Key.429Too Many RequestsRate limit exceeded.500Internal Server ErrorServer-side error while retrieving campaigns.
+See the Error Handling Guide for details.
+Example (Fetch Campaigns)
+<CodeGroup>
+  <div>
+    ```bash
+    # Replace YOUR_VENDOR_ID and YOUR_API_KEY
+    curl -X GET "https://api.fikisha.app/v1/campaigns?page=1&pageSize=10&campaignType=message&status=completed" \
+    -H "Accept: application/json" \
+    -H "X-Vendor-ID: YOUR_VENDOR_ID" \
+    -H "X-API-Key: YOUR_API_KEY"
+    ```
+  </div>
+  <div>
+    ```javascript
+    const axios = require('axios');
+async function listCampaigns(params = {}) {
+  const url = 'https://api.fikisha.app/v1/campaigns';
+  const headers = {
+    'Accept': 'application/json',
+    'X-Vendor-ID': 'YOUR_VENDOR_ID', // Replace with your Vendor ID
+    'X-API-Key': 'YOUR_API_KEY'   // Replace with your API Key
+  };
+
+  try {
+    const response = await axios.get(url, { headers, params });
+    console.log(`Retrieved ${response.data.data.campaigns.length} campaigns`);
+    console.log(`Total available: ${response.data.data.pagination.totalItems}`);
+    return response.data.data;
+  } catch (error) {
+    console.error('API Error:', error.response ? error.response.data : error.message);
+    throw error;
+  }
+}
+
+// Example: Get completed message campaigns
+listCampaigns({
+  page: 1,
+  pageSize: 10,
+  campaignType: 'message',
+  status: 'completed'
+});
+````
+
+  </div>
+  <div>
+    ```python
+    import requests
+def list_campaigns(params=None):
+    url = 'https://api.fikisha.app/v1/campaigns'
+    headers = {
+        'Accept': 'application/json',
+        'X-Vendor-ID': 'YOUR_VENDOR_ID', # Replace with your Vendor ID
+        'X-API-Key': 'YOUR_API_KEY'   # Replace with your API Key
+    }
+
+    try:
+        response = requests.get(url, headers=headers, params=params)
+        response.raise_for_status()  # Raise exception for HTTP errors
+        data = response.json()
+        print(f"Retrieved {len(data['data']['campaigns'])} campaigns")
+        print(f"Total available: {data['data']['pagination']['totalItems']}")
+        return data['data']
+    except requests.exceptions.RequestException as e:
+        print(f'API Error: {e}')
+        if hasattr(e, 'response') and e.response is not None:
+            print(f'Status Code: {e.response.status_code}')
+            print(f'Response Text: {e.response.text}')
+        raise e
+
+# Example: Get completed message campaigns
+
+list_campaigns({
+'page': 1,
+'pageSize': 10,
+'campaignType': 'message',
+'status': 'completed'
+})
+
+```
+  </div>
+</CodeGroup>
+<Info>
+  The campaign progress information is particularly useful for monitoring active campaigns. For more detailed information about a specific campaign, use the [Get Campaign Status](/api-reference/campaigns/get-campaign) endpoint.
+</Info>
+```

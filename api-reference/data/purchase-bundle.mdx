@@ -1,153 +1,396 @@
 ---
-title: 'Purchase Data Bundle'
-# API Endpoint using POST via the unified sales initiator
-api: 'POST https://api.fikisha.app/v1/sales/initiate' 
-description: 'Initiate the purchase of a specific data bundle for a customer via API.'
+title: 'Create Data Bundle Transaction'
+api: 'POST https://api.fikisha.app/v1/mobiledata'
+description: 'Initiate data bundle purchases for one or more recipients via API.'
 ---
 
-import { ParamField, ResponseField, Expandable, CodeGroup, Info, Important } from 'mintlify/components';
+import { ParamField, ResponseField, Expandable, CodeGroup, Info, Warning } from 'mintlify/components';
 
-# Purchase Data Bundle
+# Create Data Bundle Transaction
 
-Submits a request to purchase a specific data bundle for a customer's phone number using the `/v1/sales/initiate` endpoint. This operation requires API Key authentication and is processed asynchronously.
+Submits a request to purchase data bundles for one or more phone numbers. This endpoint supports both single and batch data bundle transactions. All transactions are processed asynchronously and require API Key authentication.
 
 ## Authentication
 
 This endpoint requires **API Key Authentication**. Include your `X-Vendor-ID` and `X-API-Key` in the HTTP request headers.
 
 ```http
-POST /v1/sales/initiate HTTP/1.1
-Host: api.fikisha.app # Replace with actual host
+POST /v1/mobiledata HTTP/1.1
+Host: api.fikisha.app
 Content-Type: application/json
 Accept: application/json
 X-Vendor-ID: YOUR_VENDOR_ID_HERE
 X-API-Key: YOUR_SECRET_API_KEY_HERE
 
 { ... request body ... }
-```
-
-See the [Authentication Guide](/authentication) for details.
-
-## Request Body
-
-The JSON request body must specify `saleType` as "data_bundle" and include details about the bundle and recipient.
-
-<ParamField body="saleType" type="string" required fixed="data_bundle">
-  Must be exactly `"data_bundle"`.
-</ParamField>
-
-<ParamField body="phoneNumber" type="string" required>
-  The recipient's phone number, including the country code (e.g., `+254712345678`).
-</ParamField>
-
-<ParamField body="bundleId" type="string" required>
-  The unique ID of the data bundle to purchase. Obtain this from the [List Data Bundles](/api-reference/data/list-bundles) endpoint.
+See the Authentication Guide for details.
+Request Body
+<ParamField body="dataRequests" type="array" required>
+  An array of objects, each representing a single data bundle request.
+  <Expandable>
+    <ParamField body="phoneNumber" type="string" required>
+      The recipient's phone number, including country code (e.g., `+254712345678`).
+    </ParamField>
+<ParamField body="amount" type="number" required>
+  The cost of the data bundle in KES.
 </ParamField>
 
 <ParamField body="provider" type="string" required>
-  The mobile network provider code (e.g., `safaricom`). **Must match** the provider associated with the specified `bundleId`.
+  The mobile network provider code (e.g., `safaricom`, `airtel`, `telkom`).
 </ParamField>
 
-<ParamField body="totalCost" type="number" required>
-  The **exact price** of the selected `bundleId`. This value is validated against the bundle's price and your wallet balance before queueing. Get the price from the [List Data Bundles](/api-reference/data/list-bundles) response.
-</ParamField>
-
-<ParamField body="bundleName" type="string">
-  *(Optional but Recommended)* The name of the bundle (e.g., "Weekly 2GB"). Include for clearer logging and potential use in webhooks/confirmations.
+<ParamField body="bundleId" type="string" required>
+  The unique identifier for the specific data bundle to purchase (e.g., `daily_1gb`, `weekly_5gb`).
 </ParamField>
 
 <ParamField body="clientRef" type="string">
-  *(Optional)* Your unique reference string for this specific request (max 50 characters). Useful for tracking and reconciliation.
+  *(Optional)* Your unique reference for this specific data bundle request. Useful for tracking individual items.
 </ParamField>
-
-```json
-{
-  "saleType": "data_bundle",
-  "phoneNumber": "+254712345678",
-  "bundleId": "saf_weekly_2gb", // ID obtained from listing bundles
-  "provider": "safaricom",      // Must match the bundle's provider
-  "totalCost": 250,             // Must match the price of 'saf_weekly_2gb'
-  "bundleName": "Weekly 2GB",   // Recommended for clarity
-  "clientRef": "cust_order_987_data"
+  </Expandable>
+</ParamField>
+Example Request (Single Data Bundle)
+json{
+  "dataRequests": [
+    {
+      "phoneNumber": "+254712345678",
+      "amount": 100,
+      "provider": "safaricom",
+      "bundleId": "daily_1gb",
+      "clientRef": "data-req-001"
+    }
+  ]
 }
-```
-
-## Response (202 Accepted)
-
-If the request is valid (authentication, parameters, wallet balance, bundle exists) and successfully queued, the API responds with HTTP 202 Accepted.
-
+Example Request (Batch Data Bundles)
+json{
+  "dataRequests": [
+    {
+      "phoneNumber": "+254712345678",
+      "amount": 100,
+      "provider": "safaricom",
+      "bundleId": "daily_1gb",
+      "clientRef": "data-batch-001-item-1"
+    },
+    {
+      "phoneNumber": "+254723456789",
+      "amount": 250,
+      "provider": "airtel",
+      "bundleId": "weekly_2gb",
+      "clientRef": "data-batch-001-item-2"
+    },
+    {
+      "phoneNumber": "+254734567890",
+      "amount": 1000,
+      "provider": "telkom",
+      "bundleId": "monthly_10gb",
+      "clientRef": "data-batch-001-item-3"
+    }
+  ]
+}
+<Info>
+  The API supports large batch requests with up to 1 million data bundle transactions per call. For large batches, consider implementing appropriate error handling and tracking mechanisms.
+</Info>
+Response (200 OK)
 <ResponseField name="success" type="boolean" required>
-  Always `true` if the request was accepted for processing.
+  Indicates if the request was successfully processed (`true`).
+</ResponseField>
+<ResponseField name="data" type="object" required>
+  Contains the result data for the data bundle request.
+  <Expandable>
+    <ResponseField name="transactions" type="array" required>
+      An array of transaction objects, one for each data bundle request.
+  <Expandable>
+    <ResponseField name="id" type="string" required>
+      The unique transaction ID that can be used to check the status later.
+    </ResponseField>
+    
+    <ResponseField name="status" type="string" required>
+      The initial status of the transaction. Typically `pending` at this stage.
+    </ResponseField>
+    
+    <ResponseField name="amount" type="number" required>
+      The data bundle amount.
+    </ResponseField>
+    
+    <ResponseField name="phoneNumber" type="string" required>
+      The recipient's phone number.
+    </ResponseField>
+    
+    <ResponseField name="provider" type="string" required>
+      The network provider code.
+    </ResponseField>
+    
+    <ResponseField name="bundleId" type="string" required>
+      The bundle identifier.
+    </ResponseField>
+    
+    <ResponseField name="clientRef" type="string">
+      *(Optional)* Your client reference if provided in the request.
+    </ResponseField>
+    
+    <ResponseField name="createdAt" type="string" required>
+      ISO 8601 timestamp of when the transaction was created.
+    </ResponseField>
+  </Expandable>
 </ResponseField>
 
-<ResponseField name="requestId" type="string" required>
-  The unique Fikisha ID generated for this specific sale request. Use this ID to track the asynchronous process.
+<ResponseField name="summary" type="object" required>
+  Summary information about the batch request.
+  
+  <Expandable>
+    <ResponseField name="totalRequests" type="integer" required>
+      The total number of data bundle requests in the batch.
+    </ResponseField>
+    
+    <ResponseField name="processedRequests" type="integer" required>
+      The number of requests that were successfully processed.
+    </ResponseField>
+    
+    <ResponseField name="failedRequests" type="integer" required>
+      The number of requests that failed initial validation.
+    </ResponseField>
+    
+    <ResponseField name="totalAmount" type="number" required>
+      The total amount of all processed data bundle requests.
+    </ResponseField>
+  </Expandable>
 </ResponseField>
 
-<ResponseField name="message" type="string">
-  *(Optional)* A confirmation message, e.g., "Sale request accepted and queued.".
+<ResponseField name="errors" type="array">
+  *(Optional)* Array of error objects for any requests that failed validation.
+  
+  <Expandable>
+    <ResponseField name="index" type="integer" required>
+      The index of the failed request in the original `dataRequests` array.
+    </ResponseField>
+    
+    <ResponseField name="message" type="string" required>
+      The error message explaining why the request failed.
+    </ResponseField>
+    
+    <ResponseField name="code" type="string">
+      *(Optional)* An error code for programmatic handling.
+    </ResponseField>
+  </Expandable>
 </ResponseField>
-
-<ResponseField name="clientRef" type="string">
-  *(Optional)* Your reference ID, echoed back if provided in the request.
+  </Expandable>
 </ResponseField>
-
-```json
-{
+Example Response (Successful Batch)
+json{
   "success": true,
-  "requestId": "sale_req_xyz789abc123",
-  "message": "Sale request accepted and queued.",
-  "clientRef": "cust_order_987_data"
+  "data": {
+    "transactions": [
+      {
+        "id": "txn_123456",
+        "status": "pending",
+        "amount": 100,
+        "phoneNumber": "+254712345678",
+        "provider": "safaricom",
+        "bundleId": "daily_1gb",
+        "clientRef": "data-batch-001-item-1",
+        "createdAt": "2024-04-15T12:30:00Z"
+      },
+      {
+        "id": "txn_123457",
+        "status": "pending",
+        "amount": 250,
+        "phoneNumber": "+254723456789",
+        "provider": "airtel",
+        "bundleId": "weekly_2gb",
+        "clientRef": "data-batch-001-item-2",
+        "createdAt": "2024-04-15T12:30:00Z"
+      },
+      {
+        "id": "txn_123458",
+        "status": "pending",
+        "amount": 1000,
+        "phoneNumber": "+254734567890",
+        "provider": "telkom",
+        "bundleId": "monthly_10gb",
+        "clientRef": "data-batch-001-item-3",
+        "createdAt": "2024-04-15T12:30:00Z"
+      }
+    ],
+    "summary": {
+      "totalRequests": 3,
+      "processedRequests": 3,
+      "failedRequests": 0,
+      "totalAmount": 1350
+    }
+  }
 }
-```
+Example Response (Partial Success with Validation Errors)
+json{
+  "success": true,
+  "data": {
+    "transactions": [
+      {
+        "id": "txn_123456",
+        "status": "pending",
+        "amount": 100,
+        "phoneNumber": "+254712345678",
+        "provider": "safaricom",
+        "bundleId": "daily_1gb",
+        "clientRef": "data-batch-001-item-1",
+        "createdAt": "2024-04-15T12:30:00Z"
+      },
+      {
+        "id": "txn_123457",
+        "status": "pending",
+        "amount": 250,
+        "phoneNumber": "+254723456789",
+        "provider": "airtel",
+        "bundleId": "weekly_2gb",
+        "clientRef": "data-batch-001-item-2",
+        "createdAt": "2024-04-15T12:30:00Z"
+      }
+    ],
+    "summary": {
+      "totalRequests": 3,
+      "processedRequests": 2,
+      "failedRequests": 1,
+      "totalAmount": 350
+    },
+    "errors": [
+      {
+        "index": 2,
+        "message": "Invalid bundle ID for the specified provider",
+        "code": "INVALID_BUNDLE"
+      }
+    ]
+  }
+}
+<Info>
+  Each transaction in the response is processed asynchronously. Use the transaction ID to check the final status via the transaction status endpoint or configure a webhook to receive status updates.
+</Info>
+Monitoring Transaction Status
+After submitting a data bundle request, you can track the status of each transaction by:
 
-<Important>
-  A `202 Accepted` response **only confirms the request is queued**. It does **not** guarantee the data bundle was successfully provisioned. Monitor the status asynchronously using the `requestId`.
-</Important>
+Using the Transaction Status Endpoint: Query the /v1/transactions/{transactionId} endpoint with the transaction ID.
+Configuring Webhooks: Set up a webhook to receive real-time notifications when transactions complete or fail.
 
-## Monitoring Status
-
-- **Webhooks (Recommended)**: Configure Webhooks to receive `sale.request.completed` or `sale.request.failed` events, referencing the `requestId`.
-
-- **Polling (Alternative)**: Periodically query a status endpoint (details TBD) using the `requestId`.
-
-## Possible Errors (Synchronous)
-
-Errors during the initial POST request will result in 4xx or 5xx HTTP status codes with a JSON error body.
-
-| HTTP Code | Error Code (code) | Description |
-| --------- | ----------------- | ----------- |
-| 400 | invalid-argument | Missing/invalid fields (saleType, bundleId, totalCost mismatch, etc.). |
-| 401 | unauthenticated | Missing or invalid X-Vendor-ID or X-API-Key. |
-| 402 | insufficient-funds | Wallet balance below the bundle's totalCost. |
-| 404 | product-not-found | The specified bundleId does not exist or is inactive. |
-| 500 | internal | Server-side error during validation or queueing. |
-
-Refer to the [Error Handling Guide](/error-handling) for details.
-
-## Example (Purchase via cURL)
-
-```bash
-# Replace YOUR_API_HOST, YOUR_VENDOR_ID, YOUR_API_KEY
-curl -X POST https://YOUR_API_HOST/v1/sales/initiate \
+Possible Errors
+HTTP CodeError TypeDescription400Invalid RequestMissing or invalid request parameters.401Authentication RequiredMissing or invalid X-Vendor-ID or X-API-Key.402Insufficient FundsWallet balance too low for the requested transactions.429Too Many RequestsRate limit exceeded.500Internal Server ErrorServer-side error during processing.
+See the Error Handling Guide for details on handling these errors.
+Example (cURL)
+bash# Replace YOUR_VENDOR_ID and YOUR_API_KEY
+curl -X POST https://api.fikisha.app/v1/mobiledata \
   -H "Content-Type: application/json" \
+  -H "Accept: application/json" \
   -H "X-Vendor-ID: YOUR_VENDOR_ID" \
   -H "X-API-Key: YOUR_API_KEY" \
   -d '{
-    "saleType": "data_bundle",
-    "phoneNumber": "+254722222222",
-    "bundleId": "airtel_monthly_5gb", 
-    "provider": "airtel",
-    "totalCost": 500, 
-    "bundleName": "Monthly 5GB Freedom",
-    "clientRef": "backend-data-req-1122"
+    "dataRequests": [
+      {
+        "phoneNumber": "+254712345678",
+        "amount": 100,
+        "provider": "safaricom",
+        "bundleId": "daily_1gb",
+        "clientRef": "example-data-001"
+      }
+    ]
   }'
+<CodeGroup>
+  <div>
+    ```javascript
+    const axios = require('axios');
+async function sendDataBundleRequest(dataRequests) {
+  const url = 'https://api.fikisha.app/v1/mobiledata';
+  const headers = {
+    'Content-Type': 'application/json',
+    'Accept': 'application/json',
+    'X-Vendor-ID': 'YOUR_VENDOR_ID', // Replace with your Vendor ID
+    'X-API-Key': 'YOUR_API_KEY'   // Replace with your API Key
+  };
+  
+  const data = { dataRequests };
 
-# Expected Response (on success): HTTP 202 Accepted
-# {
-#   "success": true,
-#   "requestId": "sale_req_...",
-#   "message": "Sale request accepted and queued.",
-#   "clientRef": "backend-data-req-1122"
-# }
+  try {
+    const response = await axios.post(url, data, { headers });
+    console.log('Data bundle request successful!');
+    console.log('Transactions:', response.data.data.transactions);
+    console.log('Summary:', response.data.data.summary);
+    return response.data.data;
+  } catch (error) {
+    console.error('API Error:', error.response ? error.response.data : error.message);
+    throw error;
+  }
+}
+
+// Example usage
+const dataRequests = [
+  {
+    phoneNumber: "+254712345678",
+    amount: 100,
+    provider: "safaricom",
+    bundleId: "daily_1gb",
+    clientRef: "js-example-001"
+  },
+  {
+    phoneNumber: "+254723456789",
+    amount: 250,
+    provider: "airtel",
+    bundleId: "weekly_2gb",
+    clientRef: "js-example-002"
+  }
+];
+
+sendDataBundleRequest(dataRequests);
+```
+  </div>
+  <div>
+    ```python
+    import requests
+    import json
+def send_data_bundle_request(data_requests):
+    url = 'https://api.fikisha.app/v1/mobiledata'
+    headers = {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'X-Vendor-ID': 'YOUR_VENDOR_ID', # Replace with your Vendor ID
+        'X-API-Key': 'YOUR_API_KEY'   # Replace with your API Key
+    }
+    
+    data = {
+        'dataRequests': data_requests
+    }
+
+    try:
+        response = requests.post(url, headers=headers, json=data)
+        response.raise_for_status()  # Raise exception for HTTP errors
+        result = response.json()
+        print('Data bundle request successful!')
+        print(f"Processed {result['data']['summary']['processedRequests']} of {result['data']['summary']['totalRequests']} requests")
+        return result['data']
+    except requests.exceptions.RequestException as e:
+        print(f'API Error: {e}')
+        if hasattr(e, 'response') and e.response is not None:
+            print(f'Status Code: {e.response.status_code}')
+            print(f'Response Text: {e.response.text}')
+        raise e
+
+# Example usage
+data_requests = [
+    {
+        "phoneNumber": "+254712345678",
+        "amount": 100,
+        "provider": "safaricom",
+        "bundleId": "daily_1gb",
+        "clientRef": "py-example-001"
+    },
+    {
+        "phoneNumber": "+254723456789",
+        "amount": 250,
+        "provider": "airtel",
+        "bundleId": "weekly_2gb",
+        "clientRef": "py-example-002"
+    }
+]
+
+send_data_bundle_request(data_requests)
+```
+  </div>
+</CodeGroup>
+<Warning>
+  Always verify that the bundleId is valid for the specified provider before making the request. Invalid bundle IDs will cause the transaction to fail.
+</Warning>
 ```

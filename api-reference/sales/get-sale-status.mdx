@@ -1,0 +1,333 @@
+---
+title: 'Get Sale Status'
+api: 'GET https://api.fikisha.app/v1/sales/{saleId}'
+description: 'Retrieve detailed information about a specific sale, including its current status.'
+---
+
+import {
+  ResponseField,
+  Expandable,
+  CodeGroup,
+  Info,
+} from "mintlify/components";
+
+# Get Sale Status
+
+Retrieves detailed information about a specific sale, including its current status, transaction details, and any associated metadata. This endpoint is useful for checking the status of a previously created sale, tracking delivery progress, or retrieving additional details.
+
+## Authentication
+
+This endpoint requires **API Key Authentication**. Include your `X-Vendor-ID` and `X-API-Key` in the HTTP request headers.
+
+````http
+GET /v1/sales/sale_123456 HTTP/1.1
+Host: api.fikisha.app
+X-Vendor-ID: YOUR_VENDOR_ID_HERE
+X-API-Key: YOUR_SECRET_API_KEY_HERE
+Accept: application/json
+See the Authentication Guide for details.
+Path Parameters
+ParameterDescriptionsaleIdThe unique identifier (sale_...) of the sale to retrieve.
+Response (200 OK)
+<ResponseField name="success" type="boolean" required>
+  Indicates if the request was successful (`true`).
+</ResponseField>
+<ResponseField name="data" type="object" required>
+  Contains detailed information about the sale.
+  <Expandable>
+    <ResponseField name="id" type="string" required>
+      The unique identifier for the sale.
+    </ResponseField>
+<ResponseField name="type" type="string" required>
+  The type of sale (e.g., `airtime`, `mobiledata`, `utility`, `product`).
+</ResponseField>
+
+<ResponseField name="status" type="string" required>
+  The current status of the sale. Possible values:
+  - `pending` - Initial state, sale is being processed
+  - `processing` - Sale is actively being processed
+  - `completed` - Sale has completed successfully
+  - `failed` - Sale has failed
+</ResponseField>
+
+<ResponseField name="amount" type="number" required>
+  The transaction amount.
+</ResponseField>
+
+<ResponseField name="phoneNumber" type="string" required>
+  The recipient's phone number.
+</ResponseField>
+
+<ResponseField name="provider" type="string" required>
+  The service provider.
+</ResponseField>
+
+<ResponseField name="clientRef" type="string">
+  *(Optional)* Your reference string if provided in the original request.
+</ResponseField>
+
+<ResponseField name="createdAt" type="string" required>
+  ISO 8601 timestamp of when the sale was created.
+</ResponseField>
+
+<ResponseField name="updatedAt" type="string" required>
+  ISO 8601 timestamp of when the sale was last updated.
+</ResponseField>
+
+<ResponseField name="completedAt" type="string">
+  *(Optional)* ISO 8601 timestamp of when the sale was completed.
+</ResponseField>
+
+<ResponseField name="failureReason" type="string">
+  *(Optional)* Reason for failure if the status is `failed`.
+</ResponseField>
+
+<ResponseField name="transactionId" type="string" required>
+  The ID of the underlying transaction.
+</ResponseField>
+
+<ResponseField name="metadata" type="object">
+  *(Optional)* Additional information about the sale.
+</ResponseField>
+
+<ResponseField name="typeSpecificData" type="object" required>
+  Additional data specific to the sale type.
+</ResponseField>
+  </Expandable>
+</ResponseField>
+Type-Specific Data
+The typeSpecificData field contains different information depending on the type of sale:
+<Expandable title="For airtime sales (type: airtime)">
+  <ResponseField name="saleType" type="string" required>
+    The type of airtime sale (`direct_airtime` or `pin_airtime`).
+  </ResponseField>
+  <ResponseField name="pin" type="string">
+    *(Optional)* The airtime PIN if saleType is `pin_airtime` and status is `completed`.
+  </ResponseField>
+  <ResponseField name="providerReference" type="string">
+    *(Optional)* Reference number from the network provider, if available.
+  </ResponseField>
+</Expandable>
+<Expandable title="For mobile data sales (type: mobiledata)">
+  <ResponseField name="bundleId" type="string" required>
+    The ID of the data bundle.
+  </ResponseField>
+  <ResponseField name="bundleName" type="string">
+    *(Optional)* The name of the data bundle.
+  </ResponseField>
+  <ResponseField name="validityPeriod" type="string">
+    *(Optional)* The validity period of the data bundle (e.g., "7 days").
+  </ResponseField>
+  <ResponseField name="providerReference" type="string">
+    *(Optional)* Reference number from the network provider, if available.
+  </ResponseField>
+</Expandable>
+<Expandable title="For product sales (type: product)">
+  <ResponseField name="productId" type="string" required>
+    The ID of the product.
+  </ResponseField>
+  <ResponseField name="productName" type="string">
+    *(Optional)* The name of the product.
+  </ResponseField>
+  <ResponseField name="quantity" type="integer" required>
+    The quantity purchased.
+  </ResponseField>
+  <ResponseField name="deliveryStatus" type="string">
+    *(Optional)* Current delivery status for physical products.
+  </ResponseField>
+  <ResponseField name="deliveryAddress" type="object">
+    *(Optional)* Delivery address details.
+  </ResponseField>
+  <ResponseField name="trackingCode" type="string">
+    *(Optional)* Tracking code for shipment.
+  </ResponseField>
+</Expandable>
+<Expandable title="For utility payments (type: utility)">
+  <ResponseField name="utilityType" type="string" required>
+    The type of utility (e.g., `electricity`, `water`).
+  </ResponseField>
+  <ResponseField name="accountNumber" type="string" required>
+    The utility account number.
+  </ResponseField>
+  <ResponseField name="receiptNumber" type="string">
+    *(Optional)* Receipt number from the utility provider.
+  </ResponseField>
+  <ResponseField name="providerReference" type="string">
+    *(Optional)* Reference number from the provider.
+  </ResponseField>
+</Expandable>
+Example Response (Completed Airtime Sale)
+json{
+  "success": true,
+  "data": {
+    "id": "sale_123456",
+    "type": "airtime",
+    "status": "completed",
+    "amount": 100,
+    "phoneNumber": "+254712345678",
+    "provider": "safaricom",
+    "clientRef": "sale-pos1-20240416-001",
+    "createdAt": "2024-04-16T14:30:00Z",
+    "updatedAt": "2024-04-16T14:31:15Z",
+    "completedAt": "2024-04-16T14:31:15Z",
+    "transactionId": "txn_123456",
+    "metadata": {
+      "customerName": "John Doe",
+      "location": "Nairobi Store"
+    },
+    "typeSpecificData": {
+      "saleType": "direct_airtime",
+      "providerReference": "SAF123456789"
+    }
+  }
+}
+Example Response (Completed Pin Airtime Sale)
+json{
+  "success": true,
+  "data": {
+    "id": "sale_123457",
+    "type": "airtime",
+    "status": "completed",
+    "amount": 50,
+    "phoneNumber": "+254723456789",
+    "provider": "airtel",
+    "clientRef": "sale-pos1-20240416-002",
+    "createdAt": "2024-04-16T15:00:00Z",
+    "updatedAt": "2024-04-16T15:01:30Z",
+    "completedAt": "2024-04-16T15:01:30Z",
+    "transactionId": "txn_123457",
+    "metadata": {
+      "customerName": "Jane Smith"
+    },
+    "typeSpecificData": {
+      "saleType": "pin_airtime",
+      "pin": "1234567890123456",
+      "providerReference": "AIR987654321"
+    }
+  }
+}
+Example Response (Failed Data Bundle Sale)
+json{
+  "success": true,
+  "data": {
+    "id": "sale_123458",
+    "type": "mobiledata",
+    "status": "failed",
+    "amount": 250,
+    "phoneNumber": "+254734567890",
+    "provider": "telkom",
+    "clientRef": "sale-web-20240416-003",
+    "createdAt": "2024-04-16T16:15:00Z",
+    "updatedAt": "2024-04-16T16:16:45Z",
+    "completedAt": null,
+    "failureReason": "Invalid phone number format for this provider",
+    "transactionId": "txn_123458",
+    "metadata": {
+      "customerName": "Alice Johnson",
+      "customerEmail": "alice@example.com"
+    },
+    "typeSpecificData": {
+      "bundleId": "weekly_2gb",
+      "bundleName": "Weekly 2GB Bundle"
+    }
+  }
+}
+Possible Errors
+HTTP CodeError TypeDescription400Invalid RequestInvalid saleId format.401Authentication RequiredMissing or invalid X-Vendor-ID or X-API-Key.403ForbiddenThe sale ID does not belong to your vendor account.404Not FoundSale ID not found.500Internal Server ErrorServer-side error while retrieving sale details.
+See the Error Handling Guide for details.
+Example (GET Request via cURL)
+<CodeGroup>
+  <div>
+    ```bash
+    # Replace YOUR_VENDOR_ID, YOUR_API_KEY, and SALE_ID
+    curl -X GET "https://api.fikisha.app/v1/sales/sale_123456" \
+    -H "Accept: application/json" \
+    -H "X-Vendor-ID: YOUR_VENDOR_ID" \
+    -H "X-API-Key: YOUR_API_KEY"
+    ```
+  </div>
+  <div>
+    ```javascript
+    const axios = require('axios');
+async function getSaleStatus(saleId) {
+  const url = `https://api.fikisha.app/v1/sales/${saleId}`;
+  const headers = {
+    'Accept': 'application/json',
+    'X-Vendor-ID': 'YOUR_VENDOR_ID', // Replace with your Vendor ID
+    'X-API-Key': 'YOUR_API_KEY'   // Replace with your API Key
+  };
+
+  try {
+    const response = await axios.get(url, { headers });
+    console.log('Sale Status:', response.data.data.status);
+
+    if (response.data.data.status === 'completed') {
+      console.log('Completed At:', response.data.data.completedAt);
+
+      // Handle type-specific data
+      if (response.data.data.type === 'airtime' &&
+          response.data.data.typeSpecificData.saleType === 'pin_airtime') {
+        console.log('Airtime PIN:', response.data.data.typeSpecificData.pin);
+      }
+    } else if (response.data.data.status === 'failed') {
+      console.log('Failure Reason:', response.data.data.failureReason);
+    }
+
+    return response.data.data;
+  } catch (error) {
+    console.error('API Error:', error.response ? error.response.data : error.message);
+    throw error;
+  }
+}
+
+// Example Usage:
+getSaleStatus('sale_123456');
+````
+
+  </div>
+  <div>
+    ```python
+    import requests
+def get_sale_status(sale_id):
+    url = f'https://api.fikisha.app/v1/sales/{sale_id}'
+    headers = {
+        'Accept': 'application/json',
+        'X-Vendor-ID': 'YOUR_VENDOR_ID', # Replace with your Vendor ID
+        'X-API-Key': 'YOUR_API_KEY'   # Replace with your API Key
+    }
+
+    try:
+        response = requests.get(url, headers=headers)
+        response.raise_for_status()  # Raise exception for HTTP errors
+        data = response.json()
+        print(f"Sale Status: {data['data']['status']}")
+
+        if data['data']['status'] == 'completed':
+            print(f"Completed At: {data['data']['completedAt']}")
+
+            # Handle type-specific data
+            if (data['data']['type'] == 'airtime' and
+                data['data']['typeSpecificData']['saleType'] == 'pin_airtime'):
+                print(f"Airtime PIN: {data['data']['typeSpecificData']['pin']}")
+        elif data['data']['status'] == 'failed':
+            print(f"Failure Reason: {data['data']['failureReason']}")
+
+        return data['data']
+    except requests.exceptions.RequestException as e:
+        print(f'API Error: {e}')
+        if hasattr(e, 'response') and e.response is not None:
+            print(f'Status Code: {e.response.status_code}')
+            print(f'Response Text: {e.response.text}')
+        raise e
+
+# Example Usage:
+
+get_sale_status('sale_123456')
+
+```
+  </div>
+</CodeGroup>
+<Info>
+  For real-time status updates, consider configuring webhooks to receive notifications of sale status changes. This is more efficient than frequently polling this endpoint, especially for sales that may take some time to complete.
+</Info>
+```

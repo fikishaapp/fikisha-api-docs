@@ -1,0 +1,273 @@
+---
+title: 'Withdraw Commission'
+api: 'POST https://api.fikisha.app/v1/wallet/withdraw'
+description: 'Request a withdrawal of accrued commissions from your vendor wallet to your preferred payment method.'
+---
+
+import { ParamField, ResponseField, Expandable, CodeGroup, Info, Warning } from 'mintlify/components';
+
+# Withdraw Commission
+
+Initiates a request to withdraw accrued commissions from your vendor wallet to your specified payment method. The withdrawal process is asynchronous, with status updates provided via webhooks or status polling.
+
+## Authentication
+
+This endpoint requires **API Key Authentication**. Include your `X-Vendor-ID` and `X-API-Key` in the HTTP request headers.
+
+```http
+POST /v1/wallet/withdraw HTTP/1.1
+Host: api.fikisha.app # Replace with actual host
+Content-Type: application/json
+Accept: application/json
+X-Vendor-ID: YOUR_VENDOR_ID_HERE
+X-API-Key: YOUR_SECRET_API_KEY_HERE
+
+{ ... request body ... }
+```
+
+See the [Authentication Guide](/authentication) for details.
+
+## Request Body
+
+<ParamField body="amount" type="number" required>
+  The amount to withdraw in KES. Must be greater than the minimum withdrawal limit (typically 500 KES) and not exceed your available wallet balance.
+</ParamField>
+
+<ParamField body="withdrawalMethod" type="string" required>
+  The payment method to use for the withdrawal. Supported values:
+  - `mobile_money` - For withdrawal to mobile money accounts (e.g., M-PESA)
+  - `bank_transfer` - For withdrawal to bank accounts
+</ParamField>
+
+<ParamField body="withdrawalDetails" type="object" required>
+  Details specific to the selected withdrawal method. Structure varies by method.
+  
+  <Expandable title="Mobile Money Details">
+    <ParamField body="phoneNumber" type="string" required>
+      The phone number to receive the funds, including country code (e.g., `+254712345678`).
+    </ParamField>
+  </Expandable>
+  
+  <Expandable title="Bank Transfer Details">
+    <ParamField body="accountNumber" type="string" required>
+      Bank account number to transfer funds to.
+    </ParamField>
+    
+    <ParamField body="bankCode" type="string" required>
+      Bank code for the recipient bank.
+    </ParamField>
+    
+    <ParamField body="accountName" type="string" required>
+      Name of the account holder.
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+<ParamField body="description" type="string">
+  *(Optional)* Description or notes for this withdrawal.
+</ParamField>
+
+### Example Request (Mobile Money)
+
+```json
+{
+  "amount": 1000,
+  "withdrawalMethod": "mobile_money",
+  "withdrawalDetails": {
+    "phoneNumber": "+254712345678"
+  },
+  "description": "August commission withdrawal"
+}
+```
+
+### Example Request (Bank Transfer)
+
+```json
+{
+  "amount": 5000,
+  "withdrawalMethod": "bank_transfer",
+  "withdrawalDetails": {
+    "accountNumber": "1234567890",
+    "bankCode": "01",
+    "accountName": "John Doe"
+  },
+  "description": "Quarterly commission withdrawal"
+}
+```
+
+## Response (202 Accepted)
+
+<ResponseField name="success" type="boolean" required>
+  Indicates if the withdrawal request was successfully initiated (`true`).
+</ResponseField>
+
+<ResponseField name="withdrawalId" type="string" required>
+  A unique identifier for this withdrawal request. Store this for tracking the withdrawal status.
+</ResponseField>
+
+<ResponseField name="message" type="string" required>
+  A confirmation message with details about the withdrawal request.
+</ResponseField>
+
+### Example Response
+
+```json
+{
+  "success": true,
+  "withdrawalId": "withdrawal_abc123def456",
+  "message": "Withdrawal of KES 1,000.00 initiated successfully. Reference ID: withdrawal_abc123def456"
+}
+```
+
+## Withdrawal Processing
+
+The withdrawal process follows these steps:
+
+1. **Validation**: Initial validation of request parameters, withdrawal method, and wallet balance.
+2. **Queuing**: Valid request is queued for processing by the payment system.
+3. **Processing**: The payment system processes the withdrawal (timeframe varies by method).
+4. **Completion/Failure**: The withdrawal is marked as completed or failed based on the payment system response.
+
+<Info>
+  Processing times vary by withdrawal method:
+  - Mobile Money: Typically 1-30 minutes
+  - Bank Transfer: 1-3 business days
+</Info>
+
+## Monitoring Withdrawal Status
+
+The status of a withdrawal request can be monitored through:
+
+1. **Webhooks (Recommended)**: Configure webhooks to receive `withdrawal.completed` or `withdrawal.failed` events.
+
+2. **Status Polling**: Use the wallet transactions endpoint (`/v1/wallet/transactions`) with filtering to check the status of specific withdrawal transactions.
+
+## Possible Errors
+
+| HTTP Code | Error Code (code) | Description |
+| --------- | ----------------- | ----------- |
+| 400 | invalid-argument | Invalid request parameters (e.g., amount too low, missing required fields). |
+| 401 | unauthenticated | Missing or invalid X-Vendor-ID or X-API-Key. |
+| 402 | insufficient-funds | Wallet balance is less than the requested withdrawal amount. |
+| 403 | permission-denied | Insufficient permissions to perform withdrawals. |
+| 429 | rate-limit-exceeded | Too many withdrawal requests in a short period. |
+| 500 | internal | Server-side error during request processing. |
+| 503 | unavailable | Withdrawal service temporarily unavailable. |
+
+## Example (cURL)
+
+```bash
+# Replace YOUR_API_HOST, YOUR_VENDOR_ID, YOUR_API_KEY
+curl -X POST "https://YOUR_API_HOST/v1/wallet/withdraw" \
+-H "Content-Type: application/json" \
+-H "Accept: application/json" \
+-H "X-Vendor-ID: YOUR_VENDOR_ID" \
+-H "X-API-Key: YOUR_API_KEY" \
+-d '{
+  "amount": 1000,
+  "withdrawalMethod": "mobile_money",
+  "withdrawalDetails": {
+    "phoneNumber": "+254712345678"
+  },
+  "description": "August commission withdrawal"
+}'
+```
+
+<CodeGroup>
+  <div>
+    ```javascript
+    const axios = require('axios');
+
+    async function withdrawCommission(amount, withdrawalMethod, withdrawalDetails, description = '') {
+      const url = 'https://YOUR_API_HOST/v1/wallet/withdraw'; // Replace
+      const headers = {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'X-Vendor-ID': 'YOUR_VENDOR_ID', // Replace
+        'X-API-Key': 'YOUR_API_KEY'   // Replace
+      };
+      
+      const data = {
+        amount,
+        withdrawalMethod,
+        withdrawalDetails,
+        description
+      };
+
+      try {
+        const response = await axios.post(url, data, { headers });
+        console.log('Withdrawal initiated:', response.data);
+        return response.data;
+      } catch (error) {
+        console.error('API Error:', error.response ? error.response.data : error.message);
+        throw error;
+      }
+    }
+
+    // Example Usage - Mobile Money
+    // withdrawCommission(
+    //   1000,
+    //   'mobile_money',
+    //   { phoneNumber: '+254712345678' },
+    //   'August commission withdrawal'
+    // )
+    //   .then(response => {
+    //     console.log('Withdrawal ID:', response.withdrawalId);
+    //     console.log('Message:', response.message);
+    //   });
+    ```
+  </div>
+  <div>
+    ```python
+    import requests
+
+    def withdraw_commission(amount, withdrawal_method, withdrawal_details, description=''):
+        url = 'https://YOUR_API_HOST/v1/wallet/withdraw' # Replace
+        headers = {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'X-Vendor-ID': 'YOUR_VENDOR_ID', # Replace
+            'X-API-Key': 'YOUR_API_KEY'   # Replace
+        }
+        
+        data = {
+            'amount': amount,
+            'withdrawalMethod': withdrawal_method,
+            'withdrawalDetails': withdrawal_details,
+            'description': description
+        }
+
+        try:
+            response = requests.post(url, json=data, headers=headers)
+            response.raise_for_status() # Raise HTTPError for bad responses
+            result = response.json()
+            print(f"Withdrawal initiated: {result['withdrawalId']}")
+            return result
+        except requests.exceptions.RequestException as e:
+            print(f'API Error: {e}')
+            if e.response is not None:
+                print(f'Status Code: {e.response.status_code}')
+                print(f'Response Text: {e.response.text}')
+            raise e
+
+    # Example Usage - Mobile Money
+    # mobile_money_details = {'phoneNumber': '+254712345678'}
+    # result = withdraw_commission(
+    #     1000,
+    #     'mobile_money',
+    #     mobile_money_details,
+    #     'August commission withdrawal'
+    # )
+    # print(f"Message: {result['message']}")
+    ```
+  </div>
+</CodeGroup>
+
+## Notes on Withdrawal Methods
+
+- **Mobile Money**: Currently supports M-PESA and other mobile money providers. Fees may apply depending on the amount and provider.
+- **Bank Transfer**: Requires valid bank account details. Processing times may vary by bank. Additional verification may be required for large amounts.
+
+<Warning>
+  Withdrawals are subject to daily and monthly limits, which may vary based on vendor tier, account history, and compliance requirements. Contact Fikisha support for details on withdrawal limits for your account.
+</Warning>

@@ -1,0 +1,301 @@
+---
+title: 'Add Contacts to Group'
+api: 'POST https://api.fikisha.app/v1/contact-groups/{groupId}/contacts'
+description: 'Add one or more contacts to an existing contact group.'
+---
+
+import {
+  ParamField,
+  ResponseField,
+  Expandable,
+  CodeGroup,
+  Info,
+  Warning,
+} from "mintlify/components";
+
+# Add Contacts to Group
+
+Adds one or more contacts to an existing contact group in your vendor account. This endpoint allows you to populate your contact groups with phone numbers and associated contact information.
+
+## Authentication
+
+This endpoint requires **API Key Authentication**. Include your `X-Vendor-ID` and `X-API-Key` in the HTTP request headers.
+
+````http
+POST /v1/contact-groups/{groupId}/contacts HTTP/1.1
+Host: api.fikisha.app
+Content-Type: application/json
+Accept: application/json
+X-Vendor-ID: YOUR_VENDOR_ID_HERE
+X-API-Key: YOUR_SECRET_API_KEY_HERE
+
+{ ... request body ... }
+See the Authentication Guide for details.
+Path Parameters
+ParameterDescriptiongroupIdThe unique identifier (grp_...) of the contact group to add contacts to.
+Request Body
+<ParamField body="contacts" type="array" required>
+  An array of contact objects to add to the group.
+  <Expandable>
+    <ParamField body="[]" type="object">
+      A contact object with the following properties:
+  <Expandable>
+    <ParamField body="phoneNumber" type="string" required>
+      The contact's phone number, including country code (e.g., `+254712345678`). Must be in a valid format.
+    </ParamField>
+
+    <ParamField body="name" type="string">
+      *(Optional)* The contact's name. Maximum length: 100 characters.
+    </ParamField>
+
+    <ParamField body="email" type="string">
+      *(Optional)* The contact's email address. Must be in a valid format if provided.
+    </ParamField>
+
+    <ParamField body="attributes" type="object">
+      *(Optional)* Additional attributes or custom fields for the contact.
+    </ParamField>
+  </Expandable>
+</ParamField>
+  </Expandable>
+</ParamField>
+<ParamField body="deduplicateBy" type="string">
+  *(Optional)* Specifies how to handle duplicate contacts. Allowed values:
+  - `phone` - Deduplicate by phone number (default)
+  - `email` - Deduplicate by email address
+  - `none` - Don't deduplicate (may create duplicate entries)
+</ParamField>
+<ParamField body="updateExisting" type="boolean">
+  *(Optional)* If `true`, update existing contacts with new information if they already exist in the group. Default: `false`.
+</ParamField>
+Example Request
+json{
+  "contacts": [
+    {
+      "phoneNumber": "+254712345678",
+      "name": "John Doe",
+      "email": "john@example.com",
+      "attributes": {
+        "city": "Nairobi",
+        "customerType": "retail",
+        "signupDate": "2024-01-15"
+      }
+    },
+    {
+      "phoneNumber": "+254723456789",
+      "name": "Jane Smith",
+      "email": "jane@example.com",
+      "attributes": {
+        "city": "Mombasa",
+        "customerType": "corporate"
+      }
+    },
+    {
+      "phoneNumber": "+254734567890",
+      "name": "Alice Johnson"
+    }
+  ],
+  "deduplicateBy": "phone",
+  "updateExisting": true
+}
+Response (200 OK)
+<ResponseField name="success" type="boolean" required>
+  Indicates if the request was successful (`true`).
+</ResponseField>
+<ResponseField name="data" type="object" required>
+  Contains information about the operation result.
+  <Expandable>
+    <ResponseField name="groupId" type="string" required>
+      The unique identifier of the contact group.
+    </ResponseField>
+<ResponseField name="addedCount" type="integer" required>
+  The number of new contacts added to the group.
+</ResponseField>
+
+<ResponseField name="updatedCount" type="integer" required>
+  The number of existing contacts that were updated (if `updateExisting` was `true`).
+</ResponseField>
+
+<ResponseField name="skippedCount" type="integer" required>
+  The number of contacts that were skipped (because of duplicates or invalid data).
+</ResponseField>
+
+<ResponseField name="totalCount" type="integer" required>
+  The total number of contacts in the group after this operation.
+</ResponseField>
+
+<ResponseField name="errors" type="array">
+  *(Optional)* Array of error objects for contacts that could not be added.
+
+  <Expandable>
+    <ResponseField name="index" type="integer" required>
+      The index of the contact in the input array that had an error.
+    </ResponseField>
+
+    <ResponseField name="phoneNumber" type="string" required>
+      The phone number that caused the error.
+    </ResponseField>
+
+    <ResponseField name="message" type="string" required>
+      The error message explaining why the contact couldn't be added.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+  </Expandable>
+</ResponseField>
+Example Response
+json{
+  "success": true,
+  "data": {
+    "groupId": "grp_123456",
+    "addedCount": 2,
+    "updatedCount": 1,
+    "skippedCount": 0,
+    "totalCount": 128,
+    "errors": []
+  }
+}
+Example Response (With Errors)
+json{
+  "success": true,
+  "data": {
+    "groupId": "grp_123456",
+    "addedCount": 2,
+    "updatedCount": 0,
+    "skippedCount": 1,
+    "totalCount": 127,
+    "errors": [
+      {
+        "index": 2,
+        "phoneNumber": "+254734567890X",
+        "message": "Invalid phone number format"
+      }
+    ]
+  }
+}
+Possible Errors
+HTTP CodeError TypeDescription400Invalid RequestMissing required fields or invalid values.401Authentication RequiredMissing or invalid X-Vendor-ID or X-API-Key.403ForbiddenThe contact group ID does not belong to your vendor account.404Not FoundContact group ID not found.429Too Many RequestsRate limit exceeded.500Internal Server ErrorServer-side error while adding contacts.
+See the Error Handling Guide for details.
+Example (cURL)
+bash# Replace YOUR_VENDOR_ID, YOUR_API_KEY, and GROUP_ID
+curl -X POST https://api.fikisha.app/v1/contact-groups/grp_123456/contacts \
+  -H "Content-Type: application/json" \
+  -H "Accept: application/json" \
+  -H "X-Vendor-ID: YOUR_VENDOR_ID" \
+  -H "X-API-Key: YOUR_API_KEY" \
+  -d '{
+    "contacts": [
+      {
+        "phoneNumber": "+254712345678",
+        "name": "John Doe",
+        "email": "john@example.com"
+      },
+      {
+        "phoneNumber": "+254723456789",
+        "name": "Jane Smith"
+      }
+    ],
+    "updateExisting": true
+  }'
+<CodeGroup>
+  <div>
+    ```javascript
+    const axios = require('axios');
+async function addContactsToGroup(groupId, contactData) {
+  const url = `https://api.fikisha.app/v1/contact-groups/${groupId}/contacts`;
+  const headers = {
+    'Content-Type': 'application/json',
+    'Accept': 'application/json',
+    'X-Vendor-ID': 'YOUR_VENDOR_ID', // Replace with your Vendor ID
+    'X-API-Key': 'YOUR_API_KEY'   // Replace with your API Key
+  };
+
+  try {
+    const response = await axios.post(url, contactData, { headers });
+    console.log(`Added ${response.data.data.addedCount} new contacts`);
+    console.log(`Updated ${response.data.data.updatedCount} existing contacts`);
+    console.log(`Total contacts in group: ${response.data.data.totalCount}`);
+    return response.data.data;
+  } catch (error) {
+    console.error('API Error:', error.response ? error.response.data : error.message);
+    throw error;
+  }
+}
+
+// Example Usage
+const contactData = {
+  contacts: [
+    {
+      phoneNumber: "+254712345678",
+      name: "John Doe",
+      email: "john@example.com"
+    },
+    {
+      phoneNumber: "+254723456789",
+      name: "Jane Smith"
+    }
+  ],
+  updateExisting: true
+};
+
+addContactsToGroup('grp_123456', contactData);
+````
+
+  </div>
+  <div>
+    ```python
+    import requests
+    import json
+def add_contacts_to_group(group_id, contact_data):
+    url = f'https://api.fikisha.app/v1/contact-groups/{group_id}/contacts'
+    headers = {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'X-Vendor-ID': 'YOUR_VENDOR_ID', # Replace with your Vendor ID
+        'X-API-Key': 'YOUR_API_KEY'   # Replace with your API Key
+    }
+
+    try:
+        response = requests.post(url, headers=headers, json=contact_data)
+        response.raise_for_status()  # Raise exception for HTTP errors
+        result = response.json()
+        print(f"Added {result['data']['addedCount']} new contacts")
+        print(f"Updated {result['data']['updatedCount']} existing contacts")
+        print(f"Total contacts in group: {result['data']['totalCount']}")
+        return result['data']
+    except requests.exceptions.RequestException as e:
+        print(f'API Error: {e}')
+        if hasattr(e, 'response') and e.response is not None:
+            print(f'Status Code: {e.response.status_code}')
+            print(f'Response Text: {e.response.text}')
+        raise e
+
+# Example Usage
+
+contact_data = {
+"contacts": [
+{
+"phoneNumber": "+254712345678",
+"name": "John Doe",
+"email": "john@example.com"
+},
+{
+"phoneNumber": "+254723456789",
+"name": "Jane Smith"
+}
+],
+"updateExisting": True
+}
+
+add_contacts_to_group('grp_123456', contact_data)
+
+```
+  </div>
+</CodeGroup>
+<Warning>
+  The API supports adding up to 1,000 contacts in a single request. For larger imports, consider breaking them into multiple requests. For very large datasets (tens of thousands or more), contact Fikisha support for bulk import options.
+</Warning>
+<Info>
+  After adding contacts to a group, you can use the group ID in campaign creation to target all contacts in the group with marketing messages or bulk airtime/data distributions.
+</Info>
+```

@@ -1,0 +1,198 @@
+---
+title: 'Get Product Categories'
+api: 'GET https://api.fikisha.app/v1/products/categories'
+description: 'Retrieve a list of available product categories for building categorized product catalogs.'
+---
+
+import { ResponseField, CodeGroup } from 'mintlify/components';
+
+# Get Product Categories
+
+Retrieves a list of all active product categories available in the Fikisha platform. This endpoint is useful for building category-based navigation in your application or for filtering products by category.
+
+## Authentication
+
+This endpoint requires **API Key Authentication**. Include your `X-Vendor-ID` and `X-API-Key` in the HTTP request headers.
+
+```http
+GET /v1/products/categories HTTP/1.1
+Host: api.fikisha.app # Replace with actual host
+X-Vendor-ID: YOUR_VENDOR_ID_HERE
+X-API-Key: YOUR_SECRET_API_KEY_HERE
+Accept: application/json
+```
+
+See the [Authentication Guide](/authentication) for details.
+
+## Response (200 OK)
+
+<ResponseField name="success" type="boolean" required>
+  Indicates if the request was successful (`true`).
+</ResponseField>
+
+<ResponseField name="categories" type="array" required>
+  An array of category objects, sorted by their display order (sortOrder).
+</ResponseField>
+
+### Category Object Structure
+
+<ResponseField name="id" type="string" required>
+  Unique identifier for the category.
+</ResponseField>
+
+<ResponseField name="name" type="string" required>
+  The display name of the category.
+</ResponseField>
+
+<ResponseField name="description" type="string">
+  *(Optional)* Detailed description of the category.
+</ResponseField>
+
+<ResponseField name="iconName" type="string">
+  *(Optional)* Icon name or identifier for UI display.
+</ResponseField>
+
+<ResponseField name="isActive" type="boolean" required>
+  Always `true` for categories returned by this endpoint.
+</ResponseField>
+
+<ResponseField name="sortOrder" type="number" required>
+  Numeric value indicating the suggested display order of categories.
+</ResponseField>
+
+### Example Response
+
+```json
+{
+  "success": true,
+  "categories": [
+    {
+      "id": "cat_electronics",
+      "name": "Electronics",
+      "description": "Electronic devices and accessories",
+      "iconName": "devices",
+      "isActive": true,
+      "sortOrder": 1
+    },
+    {
+      "id": "cat_groceries",
+      "name": "Groceries",
+      "description": "Food and household items",
+      "iconName": "shopping_basket",
+      "isActive": true,
+      "sortOrder": 2
+    },
+    {
+      "id": "cat_clothing",
+      "name": "Clothing",
+      "description": "Apparel and fashion items",
+      "iconName": "checkroom",
+      "isActive": true,
+      "sortOrder": 3
+    },
+    {
+      "id": "cat_home",
+      "name": "Home & Living",
+      "description": "Furniture and home goods",
+      "iconName": "home",
+      "isActive": true,
+      "sortOrder": 4
+    },
+    {
+      "id": "cat_beauty",
+      "name": "Beauty & Personal Care",
+      "description": "Cosmetics and personal care products",
+      "iconName": "spa",
+      "isActive": true,
+      "sortOrder": 5
+    }
+  ]
+}
+```
+
+## Possible Errors
+
+| HTTP Code | Error Code (code) | Description |
+| --------- | ----------------- | ----------- |
+| 401 | unauthenticated | Missing or invalid X-Vendor-ID or X-API-Key. |
+| 429 | rate-limit-exceeded | Too many requests. Implement backoff strategy. |
+| 500 | internal | Server-side error while retrieving categories. |
+
+## Example (cURL Request)
+
+```bash
+# Replace YOUR_API_HOST, YOUR_VENDOR_ID, YOUR_API_KEY
+curl -X GET "https://YOUR_API_HOST/v1/products/categories" \
+-H "Accept: application/json" \
+-H "X-Vendor-ID: YOUR_VENDOR_ID" \
+-H "X-API-Key: YOUR_API_KEY"
+```
+
+<CodeGroup>
+  <div>
+    ```javascript
+    const axios = require('axios');
+
+    async function getProductCategories() {
+      const url = 'https://YOUR_API_HOST/v1/products/categories'; // Replace
+      const headers = {
+        'Accept': 'application/json',
+        'X-Vendor-ID': 'YOUR_VENDOR_ID', // Replace
+        'X-API-Key': 'YOUR_API_KEY'   // Replace
+      };
+
+      try {
+        const response = await axios.get(url, { headers });
+        console.log(`Retrieved ${response.data.categories.length} product categories`);
+        return response.data;
+      } catch (error) {
+        console.error('API Error:', error.response ? error.response.data : error.message);
+        throw error;
+      }
+    }
+
+    // Example Usage
+    // getProductCategories().then(data => {
+    //   console.log('Categories:', data.categories);
+    // });
+    ```
+  </div>
+  <div>
+    ```python
+    import requests
+
+    def get_product_categories():
+        url = 'https://YOUR_API_HOST/v1/products/categories' # Replace
+        headers = {
+            'Accept': 'application/json',
+            'X-Vendor-ID': 'YOUR_VENDOR_ID', # Replace
+            'X-API-Key': 'YOUR_API_KEY'   # Replace
+        }
+
+        try:
+            response = requests.get(url, headers=headers)
+            response.raise_for_status() # Raise HTTPError for bad responses
+            data = response.json()
+            print(f"Retrieved {len(data.get('categories', []))} product categories")
+            return data
+        except requests.exceptions.RequestException as e:
+            print(f'API Error: {e}')
+            if e.response is not None:
+                print(f'Status Code: {e.response.status_code}')
+                print(f'Response Text: {e.response.text}')
+            raise e
+
+    # Example Usage
+    # categories = get_product_categories()
+    # for category in categories.get('categories', []):
+    #     print(f"{category['name']} - {category['description']}")
+    ```
+  </div>
+</CodeGroup>
+
+## Usage Notes
+
+- Categories are returned in the suggested display order based on their `sortOrder` field
+- This endpoint only returns active categories; inactive categories are not included
+- Category information rarely changes, so responses from this endpoint can be cached for extended periods
+- Use the category IDs when filtering products with the [Get Products](/api-reference/products/get-products) endpoint

@@ -1,0 +1,440 @@
+---
+title: 'List Sales'
+api: 'GET https://api.fikisha.app/v1/sales'
+description: 'Retrieve a paginated list of sales with filtering options.'
+---
+
+import {
+  ParamField,
+  ResponseField,
+  Expandable,
+  CodeGroup,
+  Info,
+} from "mintlify/components";
+
+# List Sales
+
+Retrieves a paginated list of sales from your vendor account. This endpoint supports filtering options to help you efficiently manage and analyze your sales history.
+
+## Authentication
+
+This endpoint requires **API Key Authentication**. Include your `X-Vendor-ID` and `X-API-Key` in the HTTP request headers.
+
+````http
+GET /v1/sales?page=1&pageSize=10&type=airtime HTTP/1.1
+Host: api.fikisha.app
+X-Vendor-ID: YOUR_VENDOR_ID_HERE
+X-API-Key: YOUR_SECRET_API_KEY_HERE
+Accept: application/json
+See the Authentication Guide for details.
+Query Parameters
+<ParamField query="page" type="integer">
+  *(Optional)* Page number for pagination.
+  - Default: `1`
+</ParamField>
+<ParamField query="pageSize" type="integer">
+  *(Optional)* Number of sales to return per page.
+  - Default: `20`
+  - Maximum: `100`
+</ParamField>
+<ParamField query="type" type="string">
+  *(Optional)* Filter by sale type. Allowed values:
+  - `airtime` - Mobile airtime sales
+  - `mobiledata` - Mobile data bundle sales
+  - `utility` - Utility payment sales
+  - `product` - Product sales
+</ParamField>
+<ParamField query="status" type="string">
+  *(Optional)* Filter by sale status. Allowed values:
+  - `pending` - Sales in the initial state
+  - `processing` - Sales being processed
+  - `completed` - Successfully completed sales
+  - `failed` - Failed sales
+</ParamField>
+<ParamField query="phoneNumber" type="string">
+  *(Optional)* Filter by recipient phone number.
+</ParamField>
+<ParamField query="provider" type="string">
+  *(Optional)* Filter by service provider (e.g., `safaricom`, `airtel`).
+</ParamField>
+<ParamField query="clientRef" type="string">
+  *(Optional)* Filter by client reference.
+</ParamField>
+<ParamField query="minAmount" type="number">
+  *(Optional)* Filter sales with amount greater than or equal to this value.
+</ParamField>
+<ParamField query="maxAmount" type="number">
+  *(Optional)* Filter sales with amount less than or equal to this value.
+</ParamField>
+<ParamField query="startDate" type="string">
+  *(Optional)* Filter sales created on or after this date. Format: ISO 8601 (e.g., `2024-01-01T00:00:00Z`).
+</ParamField>
+<ParamField query="endDate" type="string">
+  *(Optional)* Filter sales created on or before this date. Format: ISO 8601 (e.g., `2024-01-31T23:59:59Z`).
+</ParamField>
+<ParamField query="sortBy" type="string">
+  *(Optional)* Field to sort the results by. Allowed values:
+  - `createdAt` - Sort by creation date (default)
+  - `amount` - Sort by transaction amount
+  - `status` - Sort by status
+</ParamField>
+<ParamField query="sortOrder" type="string">
+  *(Optional)* Order of sorting. Allowed values:
+  - `asc` - Ascending order
+  - `desc` - Descending order (default)
+</ParamField>
+Response (200 OK)
+<ResponseField name="success" type="boolean" required>
+  Indicates if the request was successful (`true`).
+</ResponseField>
+<ResponseField name="data" type="object" required>
+  Contains the sales list and pagination information.
+  <Expandable>
+    <ResponseField name="sales" type="array" required>
+      An array of sale objects.
+  <Expandable>
+    <ResponseField name="id" type="string" required>
+      The unique identifier for the sale.
+    </ResponseField>
+
+    <ResponseField name="type" type="string" required>
+      The type of sale (e.g., `airtime`, `mobiledata`, `utility`, `product`).
+    </ResponseField>
+
+    <ResponseField name="status" type="string" required>
+      The current status of the sale.
+    </ResponseField>
+
+    <ResponseField name="amount" type="number" required>
+      The transaction amount.
+    </ResponseField>
+
+    <ResponseField name="phoneNumber" type="string" required>
+      The recipient's phone number.
+    </ResponseField>
+
+    <ResponseField name="provider" type="string" required>
+      The service provider.
+    </ResponseField>
+
+    <ResponseField name="clientRef" type="string">
+      *(Optional)* Your reference string if provided in the original request.
+    </ResponseField>
+
+    <ResponseField name="createdAt" type="string" required>
+      ISO 8601 timestamp of when the sale was created.
+    </ResponseField>
+
+    <ResponseField name="updatedAt" type="string" required>
+      ISO 8601 timestamp of when the sale was last updated.
+    </ResponseField>
+
+    <ResponseField name="completedAt" type="string">
+      *(Optional)* ISO 8601 timestamp of when the sale was completed.
+    </ResponseField>
+
+    <ResponseField name="transactionId" type="string" required>
+      The ID of the underlying transaction.
+    </ResponseField>
+
+    <ResponseField name="metadata" type="object">
+      *(Optional)* Additional information about the sale.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="pagination" type="object" required>
+  Pagination metadata.
+
+  <Expandable>
+    <ResponseField name="totalItems" type="integer" required>
+      Total number of sales matching the filter criteria.
+    </ResponseField>
+
+    <ResponseField name="currentPage" type="integer" required>
+      The current page number.
+    </ResponseField>
+
+    <ResponseField name="pageSize" type="integer" required>
+      Number of items per page.
+    </ResponseField>
+
+    <ResponseField name="totalPages" type="integer" required>
+      Total number of pages available with the current pageSize.
+    </ResponseField>
+
+    <ResponseField name="hasNextPage" type="boolean" required>
+      Indicates if there are more pages after the current one.
+    </ResponseField>
+
+    <ResponseField name="hasPreviousPage" type="boolean" required>
+      Indicates if there are pages before the current one.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="summary" type="object" required>
+  Summary statistics for the filtered sales.
+
+  <Expandable>
+    <ResponseField name="totalSales" type="integer" required>
+      Total count of sales matching the filter criteria.
+    </ResponseField>
+
+    <ResponseField name="totalAmount" type="number" required>
+      Sum of amounts for all matching sales.
+    </ResponseField>
+
+    <ResponseField name="statusBreakdown" type="object" required>
+      Counts of sales by status.
+
+      <Expandable>
+        <ResponseField name="pending" type="integer" required>
+          Count of pending sales.
+        </ResponseField>
+
+        <ResponseField name="processing" type="integer" required>
+          Count of processing sales.
+        </ResponseField>
+
+        <ResponseField name="completed" type="integer" required>
+          Count of completed sales.
+        </ResponseField>
+
+        <ResponseField name="failed" type="integer" required>
+          Count of failed sales.
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+
+    <ResponseField name="typeBreakdown" type="object" required>
+      Counts of sales by type.
+
+      <Expandable>
+        <ResponseField name="airtime" type="integer" required>
+          Count of airtime sales.
+        </ResponseField>
+
+        <ResponseField name="mobiledata" type="integer" required>
+          Count of mobile data sales.
+        </ResponseField>
+
+        <ResponseField name="utility" type="integer" required>
+          Count of utility payment sales.
+        </ResponseField>
+
+        <ResponseField name="product" type="integer" required>
+          Count of product sales.
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+  </Expandable>
+</ResponseField>
+Example Response
+json{
+  "success": true,
+  "data": {
+    "sales": [
+      {
+        "id": "sale_123456",
+        "type": "airtime",
+        "status": "completed",
+        "amount": 100,
+        "phoneNumber": "+254712345678",
+        "provider": "safaricom",
+        "clientRef": "sale-pos1-20240416-001",
+        "createdAt": "2024-04-16T14:30:00Z",
+        "updatedAt": "2024-04-16T14:31:15Z",
+        "completedAt": "2024-04-16T14:31:15Z",
+        "transactionId": "txn_123456",
+        "metadata": {
+          "customerName": "John Doe",
+          "location": "Nairobi Store"
+        }
+      },
+      {
+        "id": "sale_123457",
+        "type": "mobiledata",
+        "status": "completed",
+        "amount": 250,
+        "phoneNumber": "+254723456789",
+        "provider": "airtel",
+        "clientRef": "sale-web-20240416-002",
+        "createdAt": "2024-04-16T15:45:00Z",
+        "updatedAt": "2024-04-16T15:46:30Z",
+        "completedAt": "2024-04-16T15:46:30Z",
+        "transactionId": "txn_123457",
+        "metadata": {
+          "customerName": "Jane Smith",
+          "customerEmail": "jane@example.com"
+        }
+      },
+      {
+        "id": "sale_123458",
+        "type": "airtime",
+        "status": "failed",
+        "amount": 50,
+        "phoneNumber": "+254734567890",
+        "provider": "telkom",
+        "clientRef": "sale-app-20240416-003",
+        "createdAt": "2024-04-16T16:10:00Z",
+        "updatedAt": "2024-04-16T16:10:45Z",
+        "completedAt": null,
+        "transactionId": "txn_123458",
+        "metadata": {
+          "customerName": "Alice Johnson"
+        }
+      }
+    ],
+    "pagination": {
+      "totalItems": 143,
+      "currentPage": 1,
+      "pageSize": 10,
+      "totalPages": 15,
+      "hasNextPage": true,
+      "hasPreviousPage": false
+    },
+    "summary": {
+      "totalSales": 143,
+      "totalAmount": 17850.50,
+      "statusBreakdown": {
+        "pending": 5,
+        "processing": 2,
+        "completed": 130,
+        "failed": 6
+      },
+      "typeBreakdown": {
+        "airtime": 95,
+        "mobiledata": 42,
+        "utility": 3,
+        "product": 3
+      }
+    }
+  }
+}
+Empty Results Response
+json{
+  "success": true,
+  "data": {
+    "sales": [],
+    "pagination": {
+      "totalItems": 0,
+      "currentPage": 1,
+      "pageSize": 10,
+      "totalPages": 0,
+      "hasNextPage": false,
+      "hasPreviousPage": false
+    },
+    "summary": {
+      "totalSales": 0,
+      "totalAmount": 0,
+      "statusBreakdown": {
+        "pending": 0,
+        "processing": 0,
+        "completed": 0,
+        "failed": 0
+      },
+      "typeBreakdown": {
+        "airtime": 0,
+        "mobiledata": 0,
+        "utility": 0,
+        "product": 0
+      }
+    }
+  }
+}
+Possible Errors
+HTTP CodeError TypeDescription400Invalid RequestInvalid query parameters.401Authentication RequiredMissing or invalid X-Vendor-ID or X-API-Key.429Too Many RequestsRate limit exceeded.500Internal Server ErrorServer-side error while retrieving sales.
+See the Error Handling Guide for details.
+Example (Fetch Completed Airtime Sales)
+<CodeGroup>
+  <div>
+    ```bash
+    # Replace YOUR_VENDOR_ID and YOUR_API_KEY
+    curl -X GET "https://api.fikisha.app/v1/sales?page=1&pageSize=10&type=airtime&status=completed&startDate=2024-04-01T00:00:00Z&endDate=2024-04-30T23:59:59Z" \
+    -H "Accept: application/json" \
+    -H "X-Vendor-ID: YOUR_VENDOR_ID" \
+    -H "X-API-Key: YOUR_API_KEY"
+    ```
+  </div>
+  <div>
+    ```javascript
+    const axios = require('axios');
+async function listSales(params = {}) {
+  const url = 'https://api.fikisha.app/v1/sales';
+  const headers = {
+    'Accept': 'application/json',
+    'X-Vendor-ID': 'YOUR_VENDOR_ID', // Replace with your Vendor ID
+    'X-API-Key': 'YOUR_API_KEY'   // Replace with your API Key
+  };
+
+  try {
+    const response = await axios.get(url, { headers, params });
+    console.log(`Retrieved ${response.data.data.sales.length} sales`);
+    console.log(`Total matching: ${response.data.data.pagination.totalItems}`);
+    console.log(`Total amount: ${response.data.data.summary.totalAmount}`);
+    return response.data.data;
+  } catch (error) {
+    console.error('API Error:', error.response ? error.response.data : error.message);
+    throw error;
+  }
+}
+
+// Example: Get completed airtime sales for April 2024
+listSales({
+  page: 1,
+  pageSize: 10,
+  type: 'airtime',
+  status: 'completed',
+  startDate: '2024-04-01T00:00:00Z',
+  endDate: '2024-04-30T23:59:59Z'
+});
+````
+
+  </div>
+  <div>
+    ```python
+    import requests
+def list_sales(params=None):
+    url = 'https://api.fikisha.app/v1/sales'
+    headers = {
+        'Accept': 'application/json',
+        'X-Vendor-ID': 'YOUR_VENDOR_ID', # Replace with your Vendor ID
+        'X-API-Key': 'YOUR_API_KEY'   # Replace with your API Key
+    }
+
+    try:
+        response = requests.get(url, headers=headers, params=params)
+        response.raise_for_status()  # Raise exception for HTTP errors
+        data = response.json()
+        print(f"Retrieved {len(data['data']['sales'])} sales")
+        print(f"Total matching: {data['data']['pagination']['totalItems']}")
+        print(f"Total amount: {data['data']['summary']['totalAmount']}")
+        return data['data']
+    except requests.exceptions.RequestException as e:
+        print(f'API Error: {e}')
+        if hasattr(e, 'response') and e.response is not None:
+            print(f'Status Code: {e.response.status_code}')
+            print(f'Response Text: {e.response.text}')
+        raise e
+
+# Example: Get completed airtime sales for April 2024
+
+list_sales({
+'page': 1,
+'pageSize': 10,
+'type': 'airtime',
+'status': 'completed',
+'startDate': '2024-04-01T00:00:00Z',
+'endDate': '2024-04-30T23:59:59Z'
+})
+
+```
+  </div>
+</CodeGroup>
+<Info>
+  The summary section of the response provides aggregate statistics about the filtered sales, which can be useful for dashboards and reporting. For more detailed analytics, consider using date range filters to analyze sales trends over specific periods.
+</Info>
+```

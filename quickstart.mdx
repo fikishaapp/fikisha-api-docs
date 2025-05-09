@@ -3,7 +3,7 @@ title: 'Quickstart Guide'
 description: 'Make your first Fikisha Vendor API call in minutes using HTTP requests.'
 ---
 
-import { Tab, Tabs, Important, CardGroup, Card } from 'mintlify/components';
+import { Tab, Tabs, Important, CardGroup, Card } from "mintlify/components";
 
 # Quickstart Guide
 
@@ -11,175 +11,258 @@ This guide walks you through making your first successful API call to the Fikish
 
 ## Prerequisites
 
-1.  **Fikisha Vendor Account:** Sign up or log in via the [Vendor Portal](https://vendor.fikisha.com/signin).
-2.  **API Credentials:** Generate your unique **Vendor ID** and **API Key** from the API Credentials section in the [Vendor Dashboard](https://vendor.fikisha.com/dashboard). Keep the API Key secure!
-3.  **Funded Wallet:** Ensure your vendor wallet has sufficient funds for the transaction. Top up via M-PESA on the [Vendor Portal Dashboard](https://vendor.fikisha.com/dashboard).
+1.  **Fikisha Vendor Account:** Sign up or log in via the [Vendor Portal](https://vendor.fikisha.app/signin).
+2.  **API Credentials:** Generate your unique **Vendor ID** and **API Key** from the API Credentials section in the [Vendor Dashboard](https://vendor.fikisha.app/dashboard). Keep the API Key secure!
+3.  **Funded Wallet:** Ensure your vendor wallet has sufficient funds for the transaction. Top up via M-PESA on the [Vendor Portal Dashboard](https://vendor.fikisha.app/dashboard).
 4.  **HTTP Client:** You'll need a tool or library to make HTTP requests (e.g., cURL, Postman, `axios` for Node.js, `requests` for Python).
 
 ## Step 1: Authentication
 
 All Fikisha Vendor API endpoints require authentication using your Vendor ID and API Key passed in the HTTP headers.
 
-```plaintext Headers
+````plaintext Headers
 X-Vendor-ID: YOUR_VENDOR_ID_HERE
 X-API-Key: YOUR_SECRET_API_KEY_HERE
 Content-Type: application/json
 Accept: application/json
-```
-
-Replace `YOUR_VENDOR_ID_HERE` and `YOUR_SECRET_API_KEY_HERE` with your actual credentials. Learn more about [Authentication](/authentication).
-
-## Step 2: Prepare the Request Data
-
-To request an airtime purchase, construct a JSON payload containing the necessary details. We'll use the `/v1/sales/initiate` endpoint.
-
-```json Request Body
-{
-  "saleType": "direct_airtime",    // Or 'pin_airtime'
+Replace YOUR_VENDOR_ID_HERE and YOUR_SECRET_API_KEY_HERE with your actual credentials. Learn more about Authentication.
+Step 2: Prepare the Request Data
+To request an airtime purchase, construct a JSON payload containing the necessary details. We'll use the /v1/sales endpoint.
+json{
+  "type": "airtime",
+  "amount": 10,
   "phoneNumber": "+254712345678", // Recipient's number (use a test number first!)
-  "amount": 10,                   // KES amount (start small for testing)
-  "totalCost": 10,                // Must match 'amount' for standard airtime
   "provider": "safaricom",        // Lowercase provider code
-  "clientRef": "quickstart-test-001" // Optional: Your unique reference
+  "saleType": "direct_airtime",   // Or 'pin_airtime' to generate a PIN
+  "clientRef": "quickstart-test-001", // Optional: Your unique reference
+  "metadata": {
+    "customerName": "Test Customer"
+  }
 }
-```
-
 <Important>
-  The `totalCost` field must accurately reflect the amount to be deducted from your wallet. For standard airtime, it must equal the `amount`. This is validated against your balance *before* the request is queued.
+  The `amount` field specifies the amount of airtime to be purchased and deducted from your wallet. For standard airtime, this should be at least 10 KES (or the minimum allowed by the provider). This is validated against your balance *before* the request is queued.
 </Important>
-
-## Step 3: Make the API Call
-
-Send a POST request to the `/v1/sales/initiate` endpoint with your authentication headers and the JSON payload.
-
-(Replace `https://api.fikisha.app` with your actual API base URL)
-
+Step 3: Make the API Call
+Send a POST request to the /v1/sales endpoint with your authentication headers and the JSON payload.
 <Tabs>
   <Tab title="cURL">
     ```bash
-    curl -X POST https://api.fikisha.app/v1/sales/initiate \
+    curl -X POST https://api.fikisha.app/v1/sales \
     -H "Content-Type: application/json" \
     -H "X-Vendor-ID: YOUR_VENDOR_ID_HERE" \
     -H "X-API-Key: YOUR_SECRET_API_KEY_HERE" \
     -d '{
-    "saleType": "direct_airtime",
-    "phoneNumber": "+254712345678",
+    "type": "airtime",
     "amount": 10,
-    "totalCost": 10,
+    "phoneNumber": "+254712345678",
     "provider": "safaricom",
-    "clientRef": "quickstart-test-001"
+    "saleType": "direct_airtime",
+    "clientRef": "quickstart-test-001",
+    "metadata": {
+      "customerName": "Test Customer"
+    }
     }'
     ```
   </Tab>
   <Tab title="Node.js (using axios)">
     ```javascript
     const axios = require('axios');
-
-    async function requestAirtime() {
-      const url = 'https://api.fikisha.app/v1/sales/initiate'; // Replace with actual URL
-      const headers = {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-        'X-Vendor-ID': 'YOUR_VENDOR_ID_HERE',
-        'X-API-Key': 'YOUR_SECRET_API_KEY_HERE'
-      };
-      const data = {
-        saleType: 'direct_airtime',
-        phoneNumber: '+254712345678',
-        amount: 10,
-        totalCost: 10,
-        provider: 'safaricom',
-        clientRef: 'quickstart-test-001'
-      };
-
-      try {
-        // Note: Fikisha uses 202 for async acceptance
-        const response = await axios.post(url, data, { headers });
-        console.log(`Status: ${response.status}`); // Expect 202
-        console.log('API Response:', response.data);
-        // Example response: { success: true, message: "...", requestId: "...", clientRef: "..." }
-        return response.data;
-      } catch (error) {
-        console.error('API Error Status:', error.response?.status);
-        console.error('API Error Response:', error.response?.data);
-        throw error;
-      }
+async function requestAirtime() {
+  const url = 'https://api.fikisha.app/v1/sales';
+  const headers = {
+    'Content-Type': 'application/json',
+    'Accept': 'application/json',
+    'X-Vendor-ID': 'YOUR_VENDOR_ID_HERE',
+    'X-API-Key': 'YOUR_SECRET_API_KEY_HERE'
+  };
+  const data = {
+    type: 'airtime',
+    amount: 10,
+    phoneNumber: '+254712345678',
+    provider: 'safaricom',
+    saleType: 'direct_airtime',
+    clientRef: 'quickstart-test-001',
+    metadata: {
+      customerName: 'Test Customer'
     }
+  };
 
-    requestAirtime();
-    ```
+  try {
+    const response = await axios.post(url, data, { headers });
+    console.log('API Response:', response.data);
+    // Example response: { success: true, data: { id: "sale_...", ... } }
+    return response.data;
+  } catch (error) {
+    console.error('API Error Status:', error.response?.status);
+    console.error('API Error Response:', error.response?.data);
+    throw error;
+  }
+}
+
+requestAirtime();
+````
+
   </Tab>
   <Tab title="Python (using requests)">
     ```python
     import requests
     import json
-
-    def request_airtime():
-        url = 'https://api.fikisha.app/v1/sales/initiate' # Replace with actual URL
-        headers = {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json',
-            'X-Vendor-ID': 'YOUR_VENDOR_ID_HERE',
-            'X-API-Key': 'YOUR_SECRET_API_KEY_HERE'
+def request_airtime():
+    url = 'https://api.fikisha.app/v1/sales'
+    headers = {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'X-Vendor-ID': 'YOUR_VENDOR_ID_HERE',
+        'X-API-Key': 'YOUR_SECRET_API_KEY_HERE'
+    }
+    payload = {
+        'type': 'airtime',
+        'amount': 10,
+        'phoneNumber': '+254712345678',
+        'provider': 'safaricom',
+        'saleType': 'direct_airtime',
+        'clientRef': 'quickstart-test-001',
+        'metadata': {
+            'customerName': 'Test Customer'
         }
-        payload = {
-            'saleType': 'direct_airtime',
-            'phoneNumber': '+254712345678',
-            'amount': 10,
-            'totalCost': 10,
-            'provider': 'safaricom',
-            'clientRef': 'quickstart-test-001'
-        }
+    }
 
-        try:
-            response = requests.post(url, headers=headers, data=json.dumps(payload))
-            # Check for non-2xx status codes
-            response.raise_for_status()
-            print(f'Status: {response.status_code}') # Expect 202
-            print('API Response:', response.json())
-            # Example response: { success: True, message: "...", requestId: "...", clientRef: "..." }
-            return response.json()
-        except requests.exceptions.RequestException as e:
-            print(f'API Error: {e}')
-            if e.response is not None:
-                print(f'Status Code: {e.response.status_code}')
-                print(f'Response Text: {e.response.text}')
-            raise e
+    try:
+        response = requests.post(url, headers=headers, json=payload)
+        # Check for non-2xx status codes
+        response.raise_for_status()
+        print('API Response:', response.json())
+        # Example response: { success: True, data: { id: "sale_...", ... } }
+        return response.json()
+    except requests.exceptions.RequestException as e:
+        print(f'API Error: {e}')
+        if e.response is not None:
+            print(f'Status Code: {e.response.status_code}')
+            print(f'Response Text: {e.response.text}')
+        raise e
 
-    request_airtime()
-    ```
+request_airtime()
+
+````
   </Tab>
 </Tabs>
-
-## Step 4: Understanding the Response and Next Steps
-
-If your request is correctly authenticated, formatted, and your wallet has sufficient funds, the API will likely respond with an HTTP 202 Accepted status code. The response body confirms the request is queued:
-
-```json Response (202 Accepted)
-{
+Step 4: Understanding the Response and Next Steps
+If your request is correctly authenticated, formatted, and your wallet has sufficient funds, the API will respond with an HTTP 200 OK status code. The response body will contain details about the created sale:
+json{
   "success": true,
-  "requestId": "sale_req_...", // Fikisha's internal ID for tracking this specific request
-  "message": "Sale request accepted and queued.", // Optional confirmation message
-  "clientRef": "quickstart-test-001" // Your reference, if provided
+  "data": {
+    "id": "sale_...", // Fikisha's unique ID for this sale
+    "type": "airtime",
+    "status": "pending", // Initial status (will change as processed)
+    "amount": 10,
+    "phoneNumber": "+254712345678",
+    "provider": "safaricom",
+    "clientRef": "quickstart-test-001",
+    "createdAt": "2024-04-17T10:30:00Z",
+    "updatedAt": "2024-04-17T10:30:00Z",
+    "transactionId": "txn_...", // Related transaction ID
+    "metadata": {
+      "customerName": "Test Customer"
+    },
+    "typeSpecificData": {
+      "saleType": "direct_airtime"
+    }
+  }
 }
-```
-
 <Important>
-  A `202 Accepted` response confirms the request was **received, validated, and queued** for asynchronous processing. It does **not** guarantee the airtime was successfully delivered.
+  A `200 OK` response confirms the request was **received and queued** for processing. The sale will begin in the `pending` status and will be processed asynchronously. It does **not** guarantee the airtime was successfully delivered.
 </Important>
-
 Next Steps:
 
-- Store the requestId: Save this ID to track the transaction's progress.
-- Handle Asynchronously: Prepare your system to receive the final status update.
-- (Recommended) Webhooks: Configure a Webhook Endpoint to receive real-time notifications (sale.request.completed, sale.request.failed) pushed from Fikisha.
-- (Alternative) Polling: Periodically call a transaction status endpoint (API details TBD) using the requestId to check the status. Polling is generally less efficient than webhooks.
+Store the sale ID: Save the id value (sale_...) to track the sale's progress.
+Monitor the status: Use one of these methods to track the final status:
 
+Webhooks (Recommended): Configure a Webhook to receive real-time notifications (sale.completed, sale.failed) pushed from Fikisha.
+Status Polling: Check the Get Sale Status endpoint using the sale ID to check the current status.
+
+
+
+Example: Checking Sale Status
+<Tabs>
+  <Tab title="cURL">
+    ```bash
+    curl -X GET "https://api.fikisha.app/v1/sales/sale_123456" \
+    -H "Accept: application/json" \
+    -H "X-Vendor-ID: YOUR_VENDOR_ID_HERE" \
+    -H "X-API-Key: YOUR_SECRET_API_KEY_HERE"
+    ```
+  </Tab>
+  <Tab title="Node.js (using axios)">
+    ```javascript
+    const axios = require('axios');
+async function checkSaleStatus(saleId) {
+  const url = `https://api.fikisha.app/v1/sales/${saleId}`;
+  const headers = {
+    'Accept': 'application/json',
+    'X-Vendor-ID': 'YOUR_VENDOR_ID_HERE',
+    'X-API-Key': 'YOUR_SECRET_API_KEY_HERE'
+  };
+
+  try {
+    const response = await axios.get(url, { headers });
+    console.log('Current Status:', response.data.data.status);
+    return response.data;
+  } catch (error) {
+    console.error('API Error:', error.response ? error.response.data : error.message);
+    throw error;
+  }
+}
+
+// Replace with your actual sale ID
+checkSaleStatus('sale_123456');
+````
+
+  </Tab>
+  <Tab title="Python (using requests)">
+    ```python
+    import requests
+def check_sale_status(sale_id):
+    url = f'https://api.fikisha.app/v1/sales/{sale_id}'
+    headers = {
+        'Accept': 'application/json',
+        'X-Vendor-ID': 'YOUR_VENDOR_ID_HERE',
+        'X-API-Key': 'YOUR_SECRET_API_KEY_HERE'
+    }
+
+    try:
+        response = requests.get(url, headers=headers)
+        response.raise_for_status()
+        data = response.json()
+        print(f'Current Status: {data["data"]["status"]}')
+        return data
+    except requests.exceptions.RequestException as e:
+        print(f'API Error: {e}')
+        if e.response is not None:
+            print(f'Status Code: {e.response.status_code}')
+            print(f'Response Text: {e.response.text}')
+        raise e
+
+# Replace with your actual sale ID
+
+check_sale_status('sale_123456')
+
+```
+  </Tab>
+</Tabs>
+Next Steps
+Now that you've successfully made your first API call, you're ready to explore other endpoints and build more advanced integrations with the Fikisha Vendor API.
 <CardGroup col={2}>
-  <Card title="Authentication" icon="key" href="/authentication">
-    Learn more about API Key security.
+  <Card title="API Overview" icon="map" href="/api-reference/api-overview">
+    Explore all available API endpoints.
   </Card>
-  <Card title="Initiate Sale Endpoint" icon="paper-plane" href="/api-reference/sales/initiate-sale">
-    See detailed parameters for all sale types.
+  <Card title="Configure Webhooks" icon="webhook" href="/api-reference/webhooks/configure-webhook">
+    Set up webhooks for real-time notifications.
+  </Card>
+  <Card title="Data Bundles" icon="wifi" href="/api-reference/sales/create-sale">
+    Learn how to sell data bundles.
+  </Card>
+  <Card title="Error Handling" icon="bug" href="/error-handling">
+    Implement robust error handling.
   </Card>
 </CardGroup>
+```

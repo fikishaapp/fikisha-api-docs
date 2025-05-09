@@ -1,85 +1,70 @@
 ---
-title: 'Get Wallet Balance'
-# Using GET method, which is conventional for retrieving resource state
-api: 'GET https://api.fikisha.app/v1/wallet/balance' 
-description: 'Retrieve your current vendor wallet balance via API endpoint.'
+title: "Get Wallet Balance"
+api: "GET https://api.fikisha.app/v1/wallet/balance"
+description: "Retrieve your current vendor wallet balance via API endpoint."
 ---
 
-import { ResponseField, Expandable, CodeGroup } from 'mintlify/components';
+import { ResponseField, Expandable, CodeGroup } from "mintlify/components";
 
 # Get Wallet Balance
 
-Retrieves the current available balance and pending top-up amount associated with your vendor account using a dedicated API endpoint. This requires API Key authentication and is suitable for server-to-server integrations or backend processes needing balance information.
+Retrieves the current balance associated with your vendor account. This operation requires API Key authentication and is suitable for server-to-server integrations or backend processes that need up-to-date balance information.
 
 ## Authentication
 
 This endpoint requires **API Key Authentication**. Include your `X-Vendor-ID` and `X-API-Key` in the HTTP request headers.
 
-```http
+````http
 GET /v1/wallet/balance HTTP/1.1
-Host: api.fikisha.app # Replace with actual API host
+Host: api.fikisha.app
 X-Vendor-ID: YOUR_VENDOR_ID_HERE
 X-API-Key: YOUR_SECRET_API_KEY_HERE
 Accept: application/json
-```
-
-See the [Authentication Guide](/authentication) for more details on obtaining and using API credentials.
-
-## Request Parameters
-
+See the Authentication Guide for more details on obtaining and using API credentials.
+Request Parameters
 This endpoint does not require any query parameters or request body.
-
-## Response (200 OK)
-
+Response (200 OK)
 Returns a JSON object representing the current state of the vendor's wallet.
-
 <ResponseField name="success" type="boolean" required>
   Indicates if the request was successful (`true`).
 </ResponseField>
-
-<ResponseField name="balance" type="number" required>
-  The current **available** monetary balance in the wallet (e.g., `5000.50`). This amount can be used for transactions.
-</ResponseField>
-
-<ResponseField name="pendingTopup" type="number" required>
-  The total amount from top-up requests currently being processed but not yet reflected in the main `balance` (e.g., `1000`).
-</ResponseField>
-
+<ResponseField name="data" type="object" required>
+  Contains the wallet balance information.
+  <Expandable>
+    <ResponseField name="balance" type="number" required>
+      The current available monetary balance in the wallet (e.g., `5000.50`). This amount can be used for transactions.
+    </ResponseField>
 <ResponseField name="currency" type="string" required>
-  The currency code for the balance amounts (e.g., `KES`).
+  The currency code for the balance amount (e.g., `KES`).
 </ResponseField>
 
 <ResponseField name="lastUpdated" type="string" required>
-  ISO 8601 timestamp indicating the last time the wallet balance or pending top-up amount was updated.
+  ISO 8601 timestamp indicating the last time the wallet balance was updated.
 </ResponseField>
 
-```json
-{
+<ResponseField name="pendingTopup" type="number">
+  *(Optional)* The total amount from top-up requests currently being processed but not yet reflected in the main `balance`.
+</ResponseField>
+  </Expandable>
+</ResponseField>
+json{
   "success": true,
-  "balance": 4950.50,
-  "pendingTopup": 0,
-  "currency": "KES",
-  "lastUpdated": "2024-08-15T10:30:05Z"
+  "data": {
+    "balance": 4950.50,
+    "currency": "KES",
+    "lastUpdated": "2024-04-15T10:30:05Z",
+    "pendingTopup": 0
+  }
 }
-```
-
-## Possible Errors
-
-| HTTP Code | Error Code (code) | Description |
-| --------- | ----------------- | ----------- |
-| 401 | unauthenticated | Missing or invalid API Key/Vendor ID. |
-| 404 | wallet-not-found | No wallet associated with the Vendor ID. |
-| 500 | internal | Server-side error fetching the balance. |
-
-See [Error Handling Guide](/error-handling) for details.
-
-## Example
-
+Possible Errors
+HTTP CodeError TypeDescription401Authentication RequiredMissing or invalid API Key/Vendor ID.500Internal Server ErrorServer-side error fetching the balance.
+See Error Handling Guide for details.
+Example
 <CodeGroup>
   <div>
     ```bash
-    # Replace YOUR_VENDOR_ID, YOUR_API_KEY, and YOUR_API_HOST
-    curl -X GET https://YOUR_API_HOST/v1/wallet/balance \
+    # Replace YOUR_VENDOR_ID and YOUR_API_KEY
+    curl -X GET https://api.fikisha.app/v1/wallet/balance \
     -H "Accept: application/json" \
     -H "X-Vendor-ID: YOUR_VENDOR_ID" \
     -H "X-API-Key: YOUR_API_KEY"
@@ -88,58 +73,59 @@ See [Error Handling Guide](/error-handling) for details.
   <div>
     ```javascript
     const axios = require('axios');
+async function getWalletBalance() {
+  const url = 'https://api.fikisha.app/v1/wallet/balance';
+  const headers = {
+    'Accept': 'application/json',
+    'X-Vendor-ID': 'YOUR_VENDOR_ID', // Replace with your Vendor ID
+    'X-API-Key': 'YOUR_API_KEY'   // Replace with your API Key
+  };
 
-    async function getWalletBalance() {
-      const url = 'https://YOUR_API_HOST/v1/wallet/balance'; // Replace
-      const headers = {
-        'Accept': 'application/json',
-        'X-Vendor-ID': 'YOUR_VENDOR_ID', // Replace
-        'X-API-Key': 'YOUR_API_KEY'   // Replace
-      };
+  try {
+    const response = await axios.get(url, { headers });
+    console.log('Wallet Balance:', response.data.data.balance);
+    // Expected: { success: true, data: { balance: ..., currency: ..., lastUpdated: ... } }
+    return response.data.data;
+  } catch (error) {
+    console.error('API Error Status:', error.response?.status);
+    console.error('API Error Response:', error.response?.data);
+    throw error;
+  }
+}
 
-      try {
-        const response = await axios.get(url, { headers });
-        console.log('Wallet Balance Response:', response.data);
-        // Expected: { success: true, balance: ..., pendingTopup: ..., currency: ..., lastUpdated: ... }
-        return response.data;
-      } catch (error) {
-        console.error('API Error Status:', error.response?.status);
-        console.error('API Error Response:', error.response?.data);
-        throw error;
-      }
-    }
+getWalletBalance();
+````
 
-    getWalletBalance();
-    ```
   </div>
   <div>
     ```python
     import requests
     import json
+def get_wallet_balance():
+    url = 'https://api.fikisha.app/v1/wallet/balance'
+    headers = {
+        'Accept': 'application/json',
+        'X-Vendor-ID': 'YOUR_VENDOR_ID', # Replace with your Vendor ID
+        'X-API-Key': 'YOUR_API_KEY'   # Replace with your API Key
+    }
 
-    def get_wallet_balance():
-        url = 'https://YOUR_API_HOST/v1/wallet/balance' # Replace
-        headers = {
-            'Accept': 'application/json',
-            'X-Vendor-ID': 'YOUR_VENDOR_ID', # Replace
-            'X-API-Key': 'YOUR_API_KEY'   # Replace
-        }
+    try:
+        response = requests.get(url, headers=headers)
+        response.raise_for_status() # Raise HTTPError for bad responses (4xx or 5xx)
+        data = response.json()
+        print('Wallet Balance:', data['data']['balance'])
+        # Expected: { success: True, data: { balance: ..., currency: ..., lastUpdated: ... } }
+        return data['data']
+    except requests.exceptions.RequestException as e:
+        print(f'API Error: {e}')
+        if e.response is not None:
+            print(f'Status Code: {e.response.status_code}')
+            print(f'Response Text: {e.response.text}')
+        raise e
 
-        try:
-            response = requests.get(url, headers=headers)
-            response.raise_for_status() # Raise HTTPError for bad responses (4xx or 5xx)
-            data = response.json()
-            print('Wallet Balance Response:', data)
-            # Expected: { success: True, balance: ..., pendingTopup: ..., currency: ..., lastUpdated: ... }
-            return data
-        except requests.exceptions.RequestException as e:
-            print(f'API Error: {e}')
-            if e.response is not None:
-                print(f'Status Code: {e.response.status_code}')
-                print(f'Response Text: {e.response.text}')
-            raise e
+get_wallet_balance()
 
-    get_wallet_balance()
-    ```
+```
   </div>
 </CodeGroup>
+```

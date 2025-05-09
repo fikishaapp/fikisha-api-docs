@@ -16,11 +16,11 @@ This guide focuses primarily on **API Key Authentication**.
 
 ## 1. API Key Authentication (for HTTP Endpoints)
 
-This method is required when your server or system needs to make calls to Fikisha API endpoints (e.g., `POST /v1/sales/initiate`, `GET /v1/wallet/balance`).
+This method is required when your server or system needs to make calls to Fikisha API endpoints (e.g., `POST /v1/airtime`, `GET /v1/wallet/balance`).
 
 **Credentials:**
 
-You need two pieces of information, which you can generate and manage in the **API Credentials** section of the [Fikisha Vendor Portal Dashboard](https://vendor.fikisha.com/dashboard):
+You need two pieces of information, which you can generate and manage in the **API Credentials** section of the [Fikisha Vendor Portal Dashboard](https://vendor.fikisha.app/dashboard):
 
 1.  **Vendor ID (`X-Vendor-ID`)**: Your unique public identifier as a Fikisha vendor.
 2.  **API Key (`X-API-Key`)**: Your secret authentication token. **Treat this with the same security as a password.**
@@ -30,62 +30,54 @@ You need two pieces of information, which you can generate and manage in the **A
 For every request to a secured HTTP endpoint, you **must** include both your Vendor ID and API Key in the HTTP headers.
 
 ```http
-POST /v1/sales/initiate HTTP/1.1
-Host: api.fikisha.app      # Replace with actual API host
+POST /v1/airtime HTTP/1.1
+Host: api.fikisha.app
 Content-Type: application/json
 Accept: application/json
 X-Vendor-ID: vd_live_abcdef1234567890  # Your actual Vendor ID
 X-API-Key: sk_live_zyxwvu9876543210    # Your actual Secret API Key
 
 {
-  "saleType": "direct_airtime",
-  // ... other request data ...
+  "airtimeRequests": [
+    {
+      "saleType": "direct_airtime",
+      "phoneNumber": "+254712345678",
+      "amount": 100,
+      "provider": "safaricom",
+      "clientRef": "my-reference-123"
+    }
+  ]
 }
-```
-
 <Warning>
   **API Key Security is Your Responsibility!**
   - **Never** embed your secret API Key directly in client-side code (web browsers, mobile apps).
   - Store API Keys securely on your server using environment variables, secrets management services (like Google Secret Manager, AWS Secrets Manager, HashiCorp Vault), or secure configuration files with restricted access.
   - **Regenerate Immediately:** If you suspect your API key has been compromised, regenerate a new one *immediately* via the Vendor Portal. Update your applications accordingly, as the old key will be deactivated.
 </Warning>
-
-**API Key Authentication Errors:**
-
+API Key Authentication Errors:
 If your API Key or Vendor ID is missing, invalid, or deactivated, the API endpoint will typically respond with:
-
 HTTP Status Code: 401 Unauthorized
-
 Response Body:
-
-```json
-{
+json{
   "success": false,
-  "error": "Authentication failed: Invalid API Key.", // Or similar specific message
-  "code": "unauthenticated"
+  "error": "Authentication Required",
+  "message": "Authentication failed: Invalid API Key."
 }
-```
-
-## 2. Firebase Authentication (for Client Apps & Callable Functions)
-
+2. Firebase Authentication (for Client Apps & Callable Functions)
 This method applies when using the official Fikisha Vendor mobile app or web portal, or if you are building a client application that directly calls Fikisha's Firebase Callable Functions using the Firebase SDKs.
+How it Works:
 
-**How it Works:**
-
-- Vendors log in to the app/portal using Firebase Authentication (e.g., Google Sign-In).
-- When the app calls a backend Callable Function (like `initiateSaleRequest` when called from the app), the Firebase SDK automatically includes the logged-in user's ID token in the request headers.
-- The backend function verifies this token to authenticate and authorize the vendor (`request.auth` context).
-- No manual `X-Vendor-ID` or `X-API-Key` headers are needed for these SDK-based calls.
+Vendors log in to the app/portal using Firebase Authentication (e.g., Google Sign-In).
+When the app calls a backend Callable Function (like initiateSaleRequest when called from the app), the Firebase SDK automatically includes the logged-in user's ID token in the request headers.
+The backend function verifies this token to authenticate and authorize the vendor (request.auth context).
+No manual X-Vendor-ID or X-API-Key headers are needed for these SDK-based calls.
 
 <Info>
   If you are building a server-side integration, you should use **API Key Authentication**. Firebase Authentication via SDKs is primarily for client-side applications interacting directly with Callable Functions provided by Fikisha.
 </Info>
+Callable Function Authentication Errors:
+If a user is not properly authenticated when calling a callable function via the SDK, the SDK will throw an error, typically with error.code set to functions/unauthenticated. Your client application should handle this by prompting the user to log in. See Error Handling.
+Which Method Should You Use?
 
-**Callable Function Authentication Errors:**
-
-If a user is not properly authenticated when calling a callable function via the SDK, the SDK will throw an error, typically with `error.code` set to `functions/unauthenticated`. Your client application should handle this by prompting the user to log in. See Error Handling.
-
-## Which Method Should You Use?
-
-- **Integrating your backend server or an automated script with Fikisha?** Use API Key Authentication with HTTP Endpoints.
-- **Building a client-side application (like a custom dashboard) that interacts with Fikisha's backend functions directly?** Use Firebase Authentication and call the Firebase Callable Functions via the SDK.
+Integrating your backend server or an automated script with Fikisha? Use API Key Authentication with HTTP Endpoints.
+Building a client-side application (like a custom dashboard) that interacts with Fikisha's backend functions directly? Use Firebase Authentication and call the Firebase Callable Functions via the SDK.

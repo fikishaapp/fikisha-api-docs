@@ -1,0 +1,266 @@
+---
+title: 'Get Transaction Status'
+api: 'GET https://api.fikisha.app/v1/transactions/{transactionId}'
+description: 'Retrieve detailed information about a specific transaction.'
+---
+
+import {
+  ResponseField,
+  Expandable,
+  CodeGroup,
+  Info,
+  Note,
+} from "mintlify/components";
+
+# Get Transaction Status
+
+Retrieves detailed information about a specific transaction, including its current status. This endpoint is useful for checking the status of asynchronous operations initiated through any of the transaction-creating endpoints (airtime, mobile data, sales).
+
+<Note>
+  While this endpoint provides detailed status information, configuring
+  [webhooks](/guides/webhooks) is the recommended mechanism for receiving
+  real-time notifications about completed or failed transactions.
+</Note>
+
+## Authentication
+
+This endpoint requires **API Key Authentication**. Include your `X-Vendor-ID` and `X-API-Key` in the HTTP request headers.
+
+````http
+GET /v1/transactions/txn_123456 HTTP/1.1
+Host: api.fikisha.app
+X-Vendor-ID: YOUR_VENDOR_ID_HERE
+X-API-Key: YOUR_SECRET_API_KEY_HERE
+Accept: application/json
+See the Authentication Guide for details.
+Path Parameters
+ParameterDescriptiontransactionIdThe unique transaction ID (txn_...) returned when the transaction was created.
+Response (200 OK)
+<ResponseField name="success" type="boolean" required>
+  Indicates if the request was successful (`true`).
+</ResponseField>
+<ResponseField name="data" type="object" required>
+  Contains the detailed transaction information.
+  <Expandable>
+    <ResponseField name="id" type="string" required>
+      The unique transaction ID.
+    </ResponseField>
+<ResponseField name="type" type="string" required>
+  The transaction type (e.g., `airtime`, `mobiledata`, `sale`).
+</ResponseField>
+
+<ResponseField name="status" type="string" required>
+  Current status of the transaction. Possible values:
+  - `pending` - Transaction is being initiated
+  - `processing` - Transaction is actively being processed
+  - `completed` - Transaction successfully completed
+  - `failed` - Transaction failed (check `failureReason` for details)
+  - `cancelled` - Transaction was cancelled
+</ResponseField>
+
+<ResponseField name="amount" type="number" required>
+  The transaction amount.
+</ResponseField>
+
+<ResponseField name="clientRef" type="string">
+  *(Optional)* Your reference string if provided in the original request.
+</ResponseField>
+
+<ResponseField name="createdAt" type="string" required>
+  ISO 8601 timestamp of when the transaction was created.
+</ResponseField>
+
+<ResponseField name="updatedAt" type="string" required>
+  ISO 8601 timestamp of when the transaction was last updated.
+</ResponseField>
+
+<ResponseField name="completedAt" type="string">
+  *(Optional)* ISO 8601 timestamp of when the transaction was completed. Only present for completed transactions.
+</ResponseField>
+
+<ResponseField name="failureReason" type="string">
+  *(Optional)* Description of the failure reason if status is `failed`.
+</ResponseField>
+
+<ResponseField name="metadata" type="object">
+  *(Optional)* Additional metadata about the transaction.
+</ResponseField>
+  </Expandable>
+</ResponseField>
+Transaction Type-Specific Response Fields
+Depending on the type of the transaction, the response will include additional relevant fields:
+<Expandable title="For airtime transactions">
+  <ResponseField name="phoneNumber" type="string" required>
+    The recipient's phone number.
+  </ResponseField>
+  <ResponseField name="provider" type="string" required>
+    The network provider code (e.g., `safaricom`, `airtel`).
+  </ResponseField>
+  <ResponseField name="saleType" type="string" required>
+    The type of airtime transaction (e.g., `direct_airtime`, `pin_airtime`).
+  </ResponseField>
+  <ResponseField name="pin" type="string">
+    *(Optional)* The airtime PIN if the transaction was of `pin_airtime` type and has completed successfully.
+  </ResponseField>
+</Expandable>
+<Expandable title="For data bundle transactions">
+  <ResponseField name="phoneNumber" type="string" required>
+    The recipient's phone number.
+  </ResponseField>
+  <ResponseField name="provider" type="string" required>
+    The network provider code.
+  </ResponseField>
+  <ResponseField name="bundleId" type="string" required>
+    The ID of the data bundle.
+  </ResponseField>
+  <ResponseField name="bundleName" type="string">
+    *(Optional)* The name of the data bundle if available.
+  </ResponseField>
+</Expandable>
+<Expandable title="For sale transactions">
+  <ResponseField name="productId" type="string">
+    *(Optional)* The ID of the product sold.
+  </ResponseField>
+  <ResponseField name="productName" type="string">
+    *(Optional)* The name of the product sold.
+  </ResponseField>
+  <ResponseField name="quantity" type="number">
+    *(Optional)* The quantity of products sold.
+  </ResponseField>
+  <ResponseField name="customerDetails" type="object">
+    *(Optional)* Additional details about the customer.
+  </ResponseField>
+</Expandable>
+Example Responses
+Airtime Transaction (Completed Direct Airtime)
+json{
+  "success": true,
+  "data": {
+    "id": "txn_123456",
+    "type": "airtime",
+    "status": "completed",
+    "amount": 100,
+    "phoneNumber": "+254712345678",
+    "provider": "safaricom",
+    "saleType": "direct_airtime",
+    "clientRef": "air-req-001",
+    "createdAt": "2024-04-15T12:30:00Z",
+    "updatedAt": "2024-04-15T12:31:00Z",
+    "completedAt": "2024-04-15T12:31:00Z",
+    "metadata": {
+      "agentId": "agent123",
+      "location": "Nairobi"
+    }
+  }
+}
+Airtime Transaction (Completed PIN Airtime)
+json{
+  "success": true,
+  "data": {
+    "id": "txn_123457",
+    "type": "airtime",
+    "status": "completed",
+    "amount": 50,
+    "phoneNumber": "+254723456789",
+    "provider": "airtel",
+    "saleType": "pin_airtime",
+    "pin": "1234567890123456",
+    "clientRef": "pin-req-001",
+    "createdAt": "2024-04-15T14:30:00Z",
+    "updatedAt": "2024-04-15T14:31:15Z",
+    "completedAt": "2024-04-15T14:31:15Z"
+  }
+}
+Data Bundle Transaction (Failed)
+json{
+  "success": true,
+  "data": {
+    "id": "txn_123458",
+    "type": "mobiledata",
+    "status": "failed",
+    "amount": 250,
+    "phoneNumber": "+254734567890",
+    "provider": "telkom",
+    "bundleId": "weekly_2gb",
+    "bundleName": "Weekly 2GB",
+    "clientRef": "data-req-001",
+    "createdAt": "2024-04-15T15:30:00Z",
+    "updatedAt": "2024-04-15T15:31:45Z",
+    "failureReason": "Invalid number format for the specified provider"
+  }
+}
+Possible Errors
+HTTP CodeError TypeDescription400Invalid RequestInvalid transactionId format.401Authentication RequiredMissing or invalid X-Vendor-ID or X-API-Key.403ForbiddenThe transaction ID does not belong to your vendor account.404Not FoundTransaction ID not found.500Internal Server ErrorServer-side error while retrieving transaction details.
+See the Error Handling Guide for details.
+Example (GET Request via cURL)
+<CodeGroup>
+  <div>
+    ```bash
+    # Replace YOUR_VENDOR_ID, YOUR_API_KEY, and TRANSACTION_ID
+    curl -X GET "https://api.fikisha.app/v1/transactions/txn_123456" \
+    -H "Accept: application/json" \
+    -H "X-Vendor-ID: YOUR_VENDOR_ID" \
+    -H "X-API-Key: YOUR_API_KEY"
+    ```
+  </div>
+  <div>
+    ```javascript
+    const axios = require('axios');
+async function getTransactionStatus(transactionId) {
+  const url = `https://api.fikisha.app/v1/transactions/${transactionId}`;
+  const headers = {
+    'Accept': 'application/json',
+    'X-Vendor-ID': 'YOUR_VENDOR_ID', // Replace with your Vendor ID
+    'X-API-Key': 'YOUR_API_KEY'   // Replace with your API Key
+  };
+
+  try {
+    const response = await axios.get(url, { headers });
+    console.log('Transaction Status:', response.data.data.status);
+    return response.data.data;
+  } catch (error) {
+    console.error('API Error:', error.response ? error.response.data : error.message);
+    throw error;
+  }
+}
+
+// Example Usage:
+getTransactionStatus('txn_123456');
+````
+
+  </div>
+  <div>
+    ```python
+    import requests
+def get_transaction_status(transaction_id):
+    url = f'https://api.fikisha.app/v1/transactions/{transaction_id}'
+    headers = {
+        'Accept': 'application/json',
+        'X-Vendor-ID': 'YOUR_VENDOR_ID', # Replace with your Vendor ID
+        'X-API-Key': 'YOUR_API_KEY'   # Replace with your API Key
+    }
+
+    try:
+        response = requests.get(url, headers=headers)
+        response.raise_for_status()  # Raise exception for HTTP errors
+        data = response.json()
+        print(f"Transaction Status: {data['data']['status']}")
+        return data['data']
+    except requests.exceptions.RequestException as e:
+        print(f'API Error: {e}')
+        if hasattr(e, 'response') and e.response is not None:
+            print(f'Status Code: {e.response.status_code}')
+            print(f'Response Text: {e.response.text}')
+        raise e
+
+# Example Usage:
+
+get_transaction_status('txn_123456')
+
+```
+  </div>
+</CodeGroup>
+<Info>
+  When implementing status checking in your application, consider using webhooks for real-time updates rather than frequently polling this endpoint. For polling, implement a backoff strategy to reduce unnecessary API calls.
+</Info>
+```

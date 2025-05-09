@@ -1,0 +1,242 @@
+---
+title: 'List Webhooks'
+api: 'GET https://api.fikisha.app/v1/webhooks'
+description: 'Retrieve a list of configured webhooks for your vendor account.'
+---
+
+import {
+  ParamField,
+  ResponseField,
+  Expandable,
+  CodeGroup,
+  Info,
+} from "mintlify/components";
+
+# List Webhooks
+
+Retrieves a list of webhook configurations from your vendor account. This endpoint allows you to view all your configured webhooks, their status, and associated event subscriptions.
+
+## Authentication
+
+This endpoint requires **API Key Authentication**. Include your `X-Vendor-ID` and `X-API-Key` in the HTTP request headers.
+
+````http
+GET /v1/webhooks HTTP/1.1
+Host: api.fikisha.app
+X-Vendor-ID: YOUR_VENDOR_ID_HERE
+X-API-Key: YOUR_SECRET_API_KEY_HERE
+Accept: application/json
+See the Authentication Guide for details.
+Query Parameters
+<ParamField query="includeInactive" type="boolean">
+  *(Optional)* Whether to include inactive webhooks in the response.
+  - Default: `false` (only active webhooks are returned)
+</ParamField>
+Response (200 OK)
+<ResponseField name="success" type="boolean" required>
+  Indicates if the request was successful (`true`).
+</ResponseField>
+<ResponseField name="data" type="object" required>
+  Contains the list of webhook configurations.
+  <Expandable>
+    <ResponseField name="webhooks" type="array" required>
+      An array of webhook configuration objects.
+  <Expandable>
+    <ResponseField name="id" type="string" required>
+      The unique identifier for the webhook configuration.
+    </ResponseField>
+
+    <ResponseField name="url" type="string" required>
+      The URL where webhook events are sent.
+    </ResponseField>
+
+    <ResponseField name="events" type="array" required>
+      The events this webhook is subscribed to.
+    </ResponseField>
+
+    <ResponseField name="description" type="string">
+      *(Optional)* The webhook description.
+    </ResponseField>
+
+    <ResponseField name="isActive" type="boolean" required>
+      Whether the webhook is currently active.
+    </ResponseField>
+
+    <ResponseField name="createdAt" type="string" required>
+      ISO 8601 timestamp of when the webhook was created.
+    </ResponseField>
+
+    <ResponseField name="updatedAt" type="string" required>
+      ISO 8601 timestamp of when the webhook was last updated.
+    </ResponseField>
+
+    <ResponseField name="lastTestedAt" type="string">
+      *(Optional)* ISO 8601 timestamp of when the webhook was last tested.
+    </ResponseField>
+
+    <ResponseField name="deliveryStats" type="object" required>
+      Statistics about webhook deliveries.
+
+      <Expandable>
+        <ResponseField name="total" type="integer" required>
+          Total number of delivery attempts.
+        </ResponseField>
+
+        <ResponseField name="successful" type="integer" required>
+          Number of successful deliveries.
+        </ResponseField>
+
+        <ResponseField name="failed" type="integer" required>
+          Number of failed deliveries.
+        </ResponseField>
+
+        <ResponseField name="successRate" type="number" required>
+          Percentage of successful deliveries (0-100).
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+
+    <ResponseField name="metadata" type="object">
+      *(Optional)* Additional metadata for the webhook.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+  </Expandable>
+</ResponseField>
+Example Response
+json{
+  "success": true,
+  "data": {
+    "webhooks": [
+      {
+        "id": "whook_123456",
+        "url": "https://example.com/webhook/fikisha",
+        "events": [
+          "transaction.completed",
+          "transaction.failed",
+          "campaign.completed"
+        ],
+        "description": "Production webhook for transaction notifications",
+        "isActive": true,
+        "createdAt": "2024-04-16T14:30:00Z",
+        "updatedAt": "2024-04-16T14:30:00Z",
+        "lastTestedAt": "2024-04-16T14:30:05Z",
+        "deliveryStats": {
+          "total": 152,
+          "successful": 150,
+          "failed": 2,
+          "successRate": 98.68
+        },
+        "metadata": {
+          "environment": "production",
+          "version": "v1"
+        }
+      },
+      {
+        "id": "whook_123457",
+        "url": "https://dev.example.com/webhook/fikisha",
+        "events": [
+          "*"
+        ],
+        "description": "Development webhook (all events)",
+        "isActive": true,
+        "createdAt": "2024-03-10T09:15:00Z",
+        "updatedAt": "2024-03-10T09:15:00Z",
+        "lastTestedAt": "2024-04-15T16:45:30Z",
+        "deliveryStats": {
+          "total": 87,
+          "successful": 85,
+          "failed": 2,
+          "successRate": 97.70
+        },
+        "metadata": {
+          "environment": "development"
+        }
+      }
+    ]
+  }
+}
+Empty Results Response
+json{
+  "success": true,
+  "data": {
+    "webhooks": []
+  }
+}
+Possible Errors
+HTTP CodeError TypeDescription401Authentication RequiredMissing or invalid X-Vendor-ID or X-API-Key.403ForbiddenInsufficient permissions to list webhooks.500Internal Server ErrorServer-side error while retrieving webhooks.
+See the Error Handling Guide for details.
+Example (Fetch Webhooks)
+<CodeGroup>
+  <div>
+    ```bash
+    # Replace YOUR_VENDOR_ID and YOUR_API_KEY
+    curl -X GET "https://api.fikisha.app/v1/webhooks?includeInactive=true" \
+    -H "Accept: application/json" \
+    -H "X-Vendor-ID: YOUR_VENDOR_ID" \
+    -H "X-API-Key: YOUR_API_KEY"
+    ```
+  </div>
+  <div>
+    ```javascript
+    const axios = require('axios');
+async function listWebhooks(includeInactive = false) {
+  const url = 'https://api.fikisha.app/v1/webhooks';
+  const headers = {
+    'Accept': 'application/json',
+    'X-Vendor-ID': 'YOUR_VENDOR_ID', // Replace with your Vendor ID
+    'X-API-Key': 'YOUR_API_KEY'   // Replace with your API Key
+  };
+  const params = { includeInactive };
+
+  try {
+    const response = await axios.get(url, { headers, params });
+    console.log(`Retrieved ${response.data.data.webhooks.length} webhooks`);
+    return response.data.data.webhooks;
+  } catch (error) {
+    console.error('API Error:', error.response ? error.response.data : error.message);
+    throw error;
+  }
+}
+
+// Example: Get all webhooks including inactive ones
+listWebhooks(true);
+````
+
+  </div>
+  <div>
+    ```python
+    import requests
+def list_webhooks(include_inactive=False):
+    url = 'https://api.fikisha.app/v1/webhooks'
+    headers = {
+        'Accept': 'application/json',
+        'X-Vendor-ID': 'YOUR_VENDOR_ID', # Replace with your Vendor ID
+        'X-API-Key': 'YOUR_API_KEY'   # Replace with your API Key
+    }
+    params = {'includeInactive': 'true' if include_inactive else 'false'}
+
+    try:
+        response = requests.get(url, headers=headers, params=params)
+        response.raise_for_status()  # Raise exception for HTTP errors
+        data = response.json()
+        print(f"Retrieved {len(data['data']['webhooks'])} webhooks")
+        return data['data']['webhooks']
+    except requests.exceptions.RequestException as e:
+        print(f'API Error: {e}')
+        if hasattr(e, 'response') and e.response is not None:
+            print(f'Status Code: {e.response.status_code}')
+            print(f'Response Text: {e.response.text}')
+        raise e
+
+# Example: Get all webhooks including inactive ones
+
+list_webhooks(include_inactive=True)
+
+```
+  </div>
+</CodeGroup>
+<Info>
+  The delivery statistics provide a quick overview of each webhook's reliability. If you notice a webhook with a low success rate, you may want to check for issues with your endpoint or update the webhook URL.
+</Info>
+```

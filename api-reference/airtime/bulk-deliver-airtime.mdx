@@ -1,165 +1,282 @@
 ---
-title: 'Bulk Request Airtime'
-# API Endpoint using POST
-api: 'POST https://api.fikisha.app/v1/airtime/bulk' 
-description: 'Initiate airtime delivery for multiple recipients via a single API call.'
+title: 'Create Airtime Transaction'
+api: 'POST https://api.fikisha.app/v1/airtime'
+description: 'Initiate airtime delivery for one or more recipients via API.'
 ---
 
-import { ParamField, ResponseField, Expandable, CodeGroup, Info, Note, Warning } from 'mintlify/components';
+import { ParamField, ResponseField, Expandable, CodeGroup, Info, Warning } from 'mintlify/components';
 
-# Bulk Request Airtime Delivery
+# Create Airtime Transaction
 
-Submits multiple asynchronous airtime delivery requests (Direct or PIN) efficiently in a single HTTP API call. Each valid request within the batch is queued individually for processing. This endpoint requires API Key authentication.
-
-<Warning>
-  This endpoint is suitable for server-to-server integrations or automated batch processing. Ensure proper security and rate limit considerations. Check API limits (e.g., max 100-500 requests per call) with Fikisha support.
-</Warning>
+Submits a request to deliver airtime to one or more phone numbers. This endpoint supports both single and batch airtime transactions. All transactions are processed asynchronously and require API Key authentication.
 
 ## Authentication
 
 This endpoint requires **API Key Authentication**. Include your `X-Vendor-ID` and `X-API-Key` in the HTTP request headers.
 
 ```http
-POST /v1/airtime/bulk HTTP/1.1
-Host: api.fikisha.app # Replace with actual host
+POST /v1/airtime HTTP/1.1
+Host: api.fikisha.app
 Content-Type: application/json
 Accept: application/json
 X-Vendor-ID: YOUR_VENDOR_ID_HERE
 X-API-Key: YOUR_SECRET_API_KEY_HERE
 
 { ... request body ... }
-```
 
-See the [Authentication Guide](/authentication) for details.
-
-## Request Body
-
-The request body contains an array of individual airtime requests.
-
+See the Authentication Guide for details.
+Request Body
 <ParamField body="airtimeRequests" type="array" required>
   An array of objects, each representing a single airtime request.
-  
   <Expandable>
-    <ParamField body="saleType" type="string" required fixed="direct_airtime | pin_airtime">
-      Specifies if it's a direct top-up (`"direct_airtime"`) or PIN generation (`"pin_airtime"`).
+    <ParamField body="saleType" type="string" required>
+      Specifies the type of airtime transaction. Allowed values:
+      - `direct_airtime` - Loads airtime directly onto the recipient's phone number
+      - `pin_airtime` - Generates an airtime PIN for the specified amount and provider
     </ParamField>
-    
-    <ParamField body="phoneNumber" type="string" required>
-      Recipient's phone number, including country code (e.g., `+254712345678`).
-    </ParamField>
-    
-    <ParamField body="amount" type="number" required>
-      Airtime amount (KES). Must meet minimum requirements (e.g., > 5 KES).
-    </ParamField>
-    
-    <ParamField body="provider" type="string" required>
-      Lowercase provider code (e.g., `safaricom`, `airtel`, `telkom`).
-    </ParamField>
-    
-    <ParamField body="clientRef" type="string">
-      *(Optional)* Your unique reference for **this specific request** within the bulk call (max 50 characters). Highly recommended for tracking individual items.
-    </ParamField>
-  </Expandable>
+<ParamField body="phoneNumber" type="string" required>
+  The recipient's phone number, including country code (e.g., `+254712345678`).
 </ParamField>
 
-```json
-{
+<ParamField body="amount" type="number" required>
+  The amount of airtime in KES. Must meet minimum provider requirements (typically 10 KES or more).
+</ParamField>
+
+<ParamField body="provider" type="string" required>
+  The mobile network provider code (e.g., `safaricom`, `airtel`, `telkom`).
+</ParamField>
+
+<ParamField body="clientRef" type="string">
+  *(Optional)* Your unique reference for this specific airtime request. Useful for tracking individual items.
+</ParamField>
+  </Expandable>
+</ParamField>
+Example Request (Single Airtime Transaction)
+json{
   "airtimeRequests": [
     {
       "saleType": "direct_airtime",
-      "phoneNumber": "+254711111111",
-      "amount": 50,
+      "phoneNumber": "+254712345678",
+      "amount": 100,
       "provider": "safaricom",
-      "clientRef": "bulk-job-1-item-1"
+      "clientRef": "air-req-001"
+    }
+  ]
+}
+Example Request (Batch Airtime Transactions)
+json{
+  "airtimeRequests": [
+    {
+      "saleType": "direct_airtime",
+      "phoneNumber": "+254712345678",
+      "amount": 100,
+      "provider": "safaricom",
+      "clientRef": "air-batch-001-item-1"
     },
     {
       "saleType": "pin_airtime",
-      "phoneNumber": "+254722222222", // For logging PIN request
-      "amount": 100,
+      "phoneNumber": "+254723456789",
+      "amount": 50,
       "provider": "airtel",
-      "clientRef": "bulk-job-1-item-2"
+      "clientRef": "air-batch-001-item-2"
     },
     {
       "saleType": "direct_airtime",
-      "phoneNumber": "+254733333333", // Example item that might fail validation
-      "amount": 3, // Below minimum
-      "provider": "safaricom",
-      "clientRef": "bulk-job-1-item-3"
+      "phoneNumber": "+254734567890",
+      "amount": 200,
+      "provider": "telkom",
+      "clientRef": "air-batch-001-item-3"
     }
-    // ... up to the API limit
   ]
 }
-```
-
-<Note>
-  The total cost for the bulk request is calculated by summing the `amount` of all **valid** requests in the batch. This total cost is checked against your wallet balance before any requests are queued.
-</Note>
-
-## Response (202 Accepted or 4xx/5xx)
-
-Success (202 Accepted): Indicates the bulk request was received, partially or fully validated, and valid individual requests have been queued. The response body details which requests were accepted and which failed initial validation.
-
-Client/Server Errors (4xx/5xx): Indicates a problem with the overall request (e.g., authentication failure, malformed JSON, server error) before individual items could be processed.
-
-Success Response Body (202 Accepted):
-
+<Info>
+  The API supports large batch requests with up to 1 million airtime transactions per call. For large batches, consider implementing appropriate error handling and tracking mechanisms.
+</Info>
+Response (200 OK)
 <ResponseField name="success" type="boolean" required>
-  Typically `true` if the bulk request itself was processed, even if some individual items failed validation. Check `validationErrors`.
+  Indicates if the request was successfully processed (`true`).
+</ResponseField>
+<ResponseField name="data" type="object" required>
+  Contains the result data for the airtime request.
+  <Expandable>
+    <ResponseField name="transactions" type="array" required>
+      An array of transaction objects, one for each airtime request.
+  <Expandable>
+    <ResponseField name="id" type="string" required>
+      The unique transaction ID that can be used to check the status later.
+    </ResponseField>
+    
+    <ResponseField name="status" type="string" required>
+      The initial status of the transaction. Typically `pending` at this stage.
+    </ResponseField>
+    
+    <ResponseField name="saleType" type="string" required>
+      The type of airtime transaction (`direct_airtime` or `pin_airtime`).
+    </ResponseField>
+    
+    <ResponseField name="amount" type="number" required>
+      The airtime amount.
+    </ResponseField>
+    
+    <ResponseField name="phoneNumber" type="string" required>
+      The recipient's phone number.
+    </ResponseField>
+    
+    <ResponseField name="provider" type="string" required>
+      The network provider code.
+    </ResponseField>
+    
+    <ResponseField name="clientRef" type="string">
+      *(Optional)* Your client reference if provided in the request.
+    </ResponseField>
+    
+    <ResponseField name="createdAt" type="string" required>
+      ISO 8601 timestamp of when the transaction was created.
+    </ResponseField>
+  </Expandable>
 </ResponseField>
 
-<ResponseField name="message" type="string" required>
-  A summary message indicating how many requests were queued and how many failed validation (e.g., "Bulk request processed. 2 requests queued, 1 failed validation.").
+<ResponseField name="summary" type="object" required>
+  Summary information about the batch request.
+  
+  <Expandable>
+    <ResponseField name="totalRequests" type="integer" required>
+      The total number of airtime requests in the batch.
+    </ResponseField>
+    
+    <ResponseField name="processedRequests" type="integer" required>
+      The number of requests that were successfully processed.
+    </ResponseField>
+    
+    <ResponseField name="failedRequests" type="integer" required>
+      The number of requests that failed initial validation.
+    </ResponseField>
+    
+    <ResponseField name="totalAmount" type="number" required>
+      The total amount of all processed airtime requests.
+    </ResponseField>
+  </Expandable>
 </ResponseField>
 
-<ResponseField name="requestIds" type="array" required>
-  An array containing the unique `sale_request` IDs (`sale_req_...`) generated for each **valid and queued** request. The order corresponds to the valid items in the input `airtimeRequests` array. Use these IDs to track individual statuses.
+<ResponseField name="errors" type="array">
+  *(Optional)* Array of error objects for any requests that failed validation.
+  
+  <Expandable>
+    <ResponseField name="index" type="integer" required>
+      The index of the failed request in the original `airtimeRequests` array.
+    </ResponseField>
+    
+    <ResponseField name="message" type="string" required>
+      The error message explaining why the request failed.
+    </ResponseField>
+    
+    <ResponseField name="code" type="string">
+      *(Optional)* An error code for programmatic handling.
+    </ResponseField>
+  </Expandable>
 </ResponseField>
-
-<ResponseField name="validationErrors" type="object | null" required>
-  An object detailing initial validation failures.
-  - **Key:** The zero-based index of the failed request in the original `airtimeRequests` array.
-  - **Value:** A string describing the validation error (e.g., "Amount must be greater than 5.").
-  - `null` if all requests passed initial validation.
-  *(Requests listed here were **not** queued and **not** charged)*.
+  </Expandable>
 </ResponseField>
-
-```json
-{
+Example Response (Successful Batch)
+json{
   "success": true,
-  "message": "Bulk request processed. 2 requests queued, 1 failed validation.",
-  "requestIds": [
-    "sale_req_abc...", // Corresponds to input index 0
-    "sale_req_def..."  // Corresponds to input index 1
-  ],
-  "validationErrors": {
-    "2": "Amount must be greater than 5." // Error for request at input index 2
+  "data": {
+    "transactions": [
+      {
+        "id": "txn_123456",
+        "status": "pending",
+        "saleType": "direct_airtime",
+        "amount": 100,
+        "phoneNumber": "+254712345678",
+        "provider": "safaricom",
+        "clientRef": "air-batch-001-item-1",
+        "createdAt": "2024-04-15T12:30:00Z"
+      },
+      {
+        "id": "txn_123457",
+        "status": "pending",
+        "saleType": "pin_airtime",
+        "amount": 50,
+        "phoneNumber": "+254723456789",
+        "provider": "airtel",
+        "clientRef": "air-batch-001-item-2",
+        "createdAt": "2024-04-15T12:30:00Z"
+      },
+      {
+        "id": "txn_123458",
+        "status": "pending",
+        "saleType": "direct_airtime",
+        "amount": 200,
+        "phoneNumber": "+254734567890",
+        "provider": "telkom",
+        "clientRef": "air-batch-001-item-3",
+        "createdAt": "2024-04-15T12:30:00Z"
+      }
+    ],
+    "summary": {
+      "totalRequests": 3,
+      "processedRequests": 3,
+      "failedRequests": 0,
+      "totalAmount": 350
+    }
   }
 }
-```
-
+Example Response (Partial Success with Validation Errors)
+json{
+  "success": true,
+  "data": {
+    "transactions": [
+      {
+        "id": "txn_123456",
+        "status": "pending",
+        "saleType": "direct_airtime",
+        "amount": 100,
+        "phoneNumber": "+254712345678",
+        "provider": "safaricom",
+        "clientRef": "air-batch-001-item-1",
+        "createdAt": "2024-04-15T12:30:00Z"
+      },
+      {
+        "id": "txn_123457",
+        "status": "pending",
+        "saleType": "pin_airtime",
+        "amount": 50,
+        "phoneNumber": "+254723456789",
+        "provider": "airtel",
+        "clientRef": "air-batch-001-item-2",
+        "createdAt": "2024-04-15T12:30:00Z"
+      }
+    ],
+    "summary": {
+      "totalRequests": 3,
+      "processedRequests": 2,
+      "failedRequests": 1,
+      "totalAmount": 150
+    },
+    "errors": [
+      {
+        "index": 2,
+        "message": "Invalid phone number format",
+        "code": "INVALID_PHONE"
+      }
+    ]
+  }
+}
 <Info>
-  Each successfully queued airtime request (identified by its `requestId` in the response) is processed asynchronously. Use [Webhooks](/guides/webhooks) or Firestore listeners on `/transactions/{requestId}` (or equivalent status check endpoint) to track the final status (`completed` or `failed`) and retrieve PINs for each one.
+  Each transaction in the response is processed asynchronously. Use the transaction ID to check the final status via the transaction status endpoint or configure a webhook to receive status updates.
 </Info>
+Monitoring Transaction Status
+After submitting an airtime request, you can track the status of each transaction by:
 
-## Possible Errors (Synchronous)
+Using the Transaction Status Endpoint: Query the /v1/transactions/{transactionId} endpoint with the transaction ID.
+Configuring Webhooks: Set up a webhook to receive real-time notifications when transactions complete or fail.
 
-Errors during the initial POST `/v1/airtime/bulk` request:
-
-| HTTP Code | Error Code (code) | Description |
-| --------- | ----------------- | ----------- |
-| 400 | invalid-argument | Invalid overall request structure (e.g., missing airtimeRequests array), exceeds bulk item limit, or contains structural JSON errors. Individual item validation errors are returned in the 202 response body. |
-| 401 | unauthenticated | Missing or invalid X-Vendor-ID or X-API-Key. |
-| 402 | insufficient-funds | Wallet balance is less than the total calculated cost of all initially valid requests in the batch. |
-| 429 | rate-limit-exceeded | Bulk request rate limit exceeded. |
-| 500 | internal | Server-side error during initial bulk validation or queueing. |
-
-Refer to the [Error Handling Guide](/error-handling) for details.
-
-## Example (Bulk Request via cURL)
-
-```bash
-# Replace YOUR_API_HOST, YOUR_VENDOR_ID, YOUR_API_KEY
-curl -X POST https://YOUR_API_HOST/v1/airtime/bulk \
+Possible Errors
+HTTP CodeError TypeDescription400Invalid RequestMissing or invalid request parameters.401Authentication RequiredMissing or invalid X-Vendor-ID or X-API-Key.402Insufficient FundsWallet balance too low for the requested transactions.429Too Many RequestsRate limit exceeded.500Internal Server ErrorServer-side error during processing.
+See the Error Handling Guide for details on handling these errors.
+Example (cURL)
+bash# Replace YOUR_VENDOR_ID and YOUR_API_KEY
+curl -X POST https://api.fikisha.app/v1/airtime \
   -H "Content-Type: application/json" \
   -H "Accept: application/json" \
   -H "X-Vendor-ID: YOUR_VENDOR_ID" \
@@ -168,26 +285,115 @@ curl -X POST https://YOUR_API_HOST/v1/airtime/bulk \
     "airtimeRequests": [
       {
         "saleType": "direct_airtime",
-        "phoneNumber": "+254711111111",
-        "amount": 50,
-        "provider": "safaricom",
-        "clientRef": "bulk-job-2-item-1"
-      },
-      {
-        "saleType": "pin_airtime",
-        "phoneNumber": "+254722222222",
+        "phoneNumber": "+254712345678",
         "amount": 100,
-        "provider": "airtel",
-        "clientRef": "bulk-job-2-item-2"
+        "provider": "safaricom",
+        "clientRef": "example-air-001"
       }
     ]
   }'
+<CodeGroup>
+  <div>
+    ```javascript
+    const axios = require('axios');
+async function sendAirtimeRequest(airtimeRequests) {
+  const url = 'https://api.fikisha.app/v1/airtime';
+  const headers = {
+    'Content-Type': 'application/json',
+    'Accept': 'application/json',
+    'X-Vendor-ID': 'YOUR_VENDOR_ID', // Replace with your Vendor ID
+    'X-API-Key': 'YOUR_API_KEY'   // Replace with your API Key
+  };
+  
+  const data = { airtimeRequests };
 
-# Expected Response (on success): HTTP 202 Accepted
-# {
-#   "success": true,
-#   "message": "Bulk request processed. 2 requests queued, 0 failed validation.",
-#   "requestIds": [ "sale_req_...", "sale_req_..." ],
-#   "validationErrors": null
-# }
+  try {
+    const response = await axios.post(url, data, { headers });
+    console.log('Airtime request successful!');
+    console.log('Transactions:', response.data.data.transactions);
+    console.log('Summary:', response.data.data.summary);
+    return response.data.data;
+  } catch (error) {
+    console.error('API Error:', error.response ? error.response.data : error.message);
+    throw error;
+  }
+}
+
+// Example usage
+const airtimeRequests = [
+  {
+    saleType: "direct_airtime",
+    phoneNumber: "+254712345678",
+    amount: 100,
+    provider: "safaricom",
+    clientRef: "js-example-001"
+  },
+  {
+    saleType: "pin_airtime",
+    phoneNumber: "+254723456789",
+    amount: 50,
+    provider: "airtel",
+    clientRef: "js-example-002"
+  }
+];
+
+sendAirtimeRequest(airtimeRequests);
+```
+  </div>
+  <div>
+    ```python
+    import requests
+    import json
+def send_airtime_request(airtime_requests):
+    url = 'https://api.fikisha.app/v1/airtime'
+    headers = {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'X-Vendor-ID': 'YOUR_VENDOR_ID', # Replace with your Vendor ID
+        'X-API-Key': 'YOUR_API_KEY'   # Replace with your API Key
+    }
+    
+    data = {
+        'airtimeRequests': airtime_requests
+    }
+
+    try:
+        response = requests.post(url, headers=headers, json=data)
+        response.raise_for_status()  # Raise exception for HTTP errors
+        result = response.json()
+        print('Airtime request successful!')
+        print(f"Processed {result['data']['summary']['processedRequests']} of {result['data']['summary']['totalRequests']} requests")
+        return result['data']
+    except requests.exceptions.RequestException as e:
+        print(f'API Error: {e}')
+        if hasattr(e, 'response') and e.response is not None:
+            print(f'Status Code: {e.response.status_code}')
+            print(f'Response Text: {e.response.text}')
+        raise e
+
+# Example usage
+airtime_requests = [
+    {
+        "saleType": "direct_airtime",
+        "phoneNumber": "+254712345678",
+        "amount": 100,
+        "provider": "safaricom",
+        "clientRef": "py-example-001"
+    },
+    {
+        "saleType": "pin_airtime",
+        "phoneNumber": "+254723456789",
+        "amount": 50,
+        "provider": "airtel",
+        "clientRef": "py-example-002"
+    }
+]
+
+send_airtime_request(airtime_requests)
+```
+  </div>
+</CodeGroup>
+<Warning>
+  Always ensure the recipient phone numbers are in the correct international format with the country code. Invalid phone numbers will cause the transaction to fail.
+</Warning>
 ```
