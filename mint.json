@@ -1,8 +1,8 @@
 {
   "name": "Fikisha Vendor API",
   "logo": {
-    "light": "/logo/light.svg",
-    "dark": "/logo/dark.svg"
+    "light": "/logo/lightlogo.svg",
+    "dark": "/logo/darklogo.svg"
   },
   "favicon": "/favicon.svg",
   "colors": {
