@@ -1,8 +1,8 @@
 {
-  "name": "Fikisha Vendor API",
+  "name": "Fikisha API",
   "logo": {
-    "light": "/logo/lightlogo.svg",
-    "dark": "/logo/darklogo.svg"
+    "dark": "/logo/darklogo.svg",
+    "light": "/logo/lightlogo.svg"
   },
   "favicon": "/favicon.svg",
   "colors": {
@@ -12,24 +12,24 @@
   },
   "topbarLinks": [
     {
-      "name": "Dashboard",
-      "url": "https://vendor.fikisha.com"
+      "name": "Support",
+      "url": "https://fikisha.co.ke/support"
     }
   ],
   "topbarCtaButton": {
-    "name": "Get Started",
-    "url": "https://vendor.fikisha.com/signin"
+    "name": "Dashboard",
+    "url": "https://fikisha.co.ke/dashboard"
   },
   "anchors": [
     {
       "name": "API Reference",
       "icon": "code",
-      "url": "api-reference/api-overview"
+      "url": "api-reference/overview"
     },
     {
-      "name": "Support",
-      "icon": "headset",
-      "url": "mailto:support@fikisha.app"
+      "name": "Guides",
+      "icon": "book",
+      "url": "api-reference/guides/overview"
     }
   ],
   "navigation": [
@@ -37,32 +37,42 @@
       "group": "Getting Started",
       "pages": [
         "introduction",
-        "quickstart",
-        "authentication"
+        "api-reference/overview",
+        "api-reference/guides/overview"
       ]
     },
     {
       "group": "API Reference",
       "pages": [
-        "api-reference/api-overview",
-        {
-          "group": "Airtime",
-          "pages": [
-            "api-reference/airtime/create-airtime"
-          ]
-        },
-        {
-          "group": "Data Bundles",
-          "pages": [
-            "api-reference/data/create-data-bundle"
-          ]
-        },
         {
           "group": "Sales",
           "pages": [
             "api-reference/sales/create-sale",
             "api-reference/sales/list-sales",
-            "api-reference/sales/get-sale"
+            "api-reference/sales/get-sale-status"
+          ]
+        },
+        {
+          "group": "Campaigns",
+          "pages": [
+            "api-reference/campaigns/create-campaign",
+            "api-reference/campaigns/get-campaign",
+            "api-reference/campaigns/list-campaigns"
+          ]
+        },
+        {
+          "group": "Webhooks",
+          "pages": [
+            "api-reference/webhooks/list-webhooks",
+            "api-reference/webhooks/list-webhook-deliveries"
+          ]
+        },
+        {
+          "group": "Contact Groups",
+          "pages": [
+            "api-reference/contact-group/create-contact-group",
+            "api-reference/contact-group/list-contact-groups",
+            "api-reference/contact-group/get-contact-group"
           ]
         },
         {
@@ -76,46 +86,36 @@
           "group": "Wallet",
           "pages": [
             "api-reference/wallet/get-wallet-balance",
-            "api-reference/wallet/get-wallet-transactions"
+            "api-reference/wallet/list-wallet-transactions"
           ]
         },
         {
-          "group": "Contacts",
+          "group": "Products",
           "pages": [
-            "api-reference/contacts/create-contact-group",
-            "api-reference/contacts/list-contact-groups",
-            "api-reference/contacts/add-contacts"
+            "api-reference/products/list-products",
+            "api-reference/products/get-product"
           ]
         },
         {
-          "group": "Campaigns",
+          "group": "Airtime",
           "pages": [
-            "api-reference/campaigns/create-campaign",
-            "api-reference/campaigns/list-campaigns",
-            "api-reference/campaigns/get-campaign"
+            "api-reference/airtime/list-airtime-providers",
+            "api-reference/airtime/get-airtime-provider"
           ]
         },
         {
-          "group": "Webhooks",
+          "group": "Data",
           "pages": [
-            "api-reference/webhooks/configure-webhook",
-            "api-reference/webhooks/list-webhooks",
-            "api-reference/webhooks/list-webhook-deliveries"
+            "api-reference/data/list-data-providers",
+            "api-reference/data/get-data-provider"
           ]
         }
-      ]
-    },
-    {
-      "group": "Guides",
-      "pages": [
-        "guides/error-handling",
-        "guides/webhooks",
-        "guides/testing-integration"
       ]
     }
   ],
   "footerSocials": {
     "twitter": "https://twitter.com/fikisha",
-    "linkedin": "https://www.linkedin.com/company/fikisha"
+    "github": "https://github.com/fikisha",
+    "linkedin": "https://linkedin.com/company/fikisha"
   }
 }
